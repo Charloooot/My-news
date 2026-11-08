@@ -26,7 +26,7 @@
  *                                           edge-cached 5 min per symbol
  *   GET /caps?ids=Q312,Q2283              → dated market caps from Wikidata (7 d)
  *   GET /cams/caltrans?d=1..12            → compact Caltrans camera index (1 h)
- *   GET /cams/nz | /cams/es | /cams/is    → NZTA, Spain DGT, Iceland indexes (1 h)
+ *   GET /cams/nz | /cams/es | /cams/is | /cams/bc → NZTA, Spain DGT, Iceland, DriveBC indexes (1 h)
  *   GET /cams/nps                         → US National Park webcams (24 h)
  *   GET /gdelt?query=...&maxrecords=250   → GDELT ArtList JSON, edge-cached 10 min
  *   GET /extract?url=https://...          → readable article text, edge-cached 6 h
@@ -57,7 +57,7 @@
 import { collectNews, collectFrance, collectUsPolitics, collectBusiness, fetchQuote, searchCompanies } from './news-collector.js';
 import { collectPolls } from './polls-collector.js';
 import { collectConflicts } from './conflicts-collector.js';
-import { caltransDistrict, nzCameras, spainCameras, icelandCameras, npsWebcams } from './cams.js';
+import { caltransDistrict, nzCameras, spainCameras, icelandCameras, npsWebcams, bcCameras } from './cams.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -185,6 +185,7 @@ const CAM_INDEXES = {
   nz:  { ttl: 3600,  load: () => nzCameras() },
   es:  { ttl: 3600,  load: () => spainCameras() },
   is:  { ttl: 3600,  load: () => icelandCameras() },
+  bc:  { ttl: 3600,  load: () => bcCameras() },
   nps: { ttl: 86400, load: (env) => npsWebcams(env.NPS_KEY || 'DEMO_KEY') },   // DEMO_KEY is rate-limited → cache a day
 };
 async function handleCams(reqUrl, env, ctx) {

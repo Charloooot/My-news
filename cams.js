@@ -5,10 +5,11 @@
  * agencies publishing open data). Never unsecured private cameras.
  *
  * Most sources are fetched by the browser directly (they send CORS headers).
- * Two need the Worker:
+ * Some need the Worker:
  *   /cams/caltrans?d=1..12  Caltrans publishes ~12 MB of uncompressed JSON per
  *                           state; we shrink one district (≤2.5 MB) to ~150 KB.
  *   /cams/nz                NZTA's JSON only allows CORS for localhost.
+ *   /cams/bc                DriveBC's JSON sends no CORS header.
  * Both are edge-cached for an hour (camera lists change rarely; the images
  * themselves are loaded straight from the agencies).
  *
@@ -85,6 +86,24 @@ export async function icelandCameras() {
     if (!c.Slod || !Number.isFinite(c.Breidd) || !Number.isFinite(c.Lengd)) continue;
     out.push([`is-${c.Slod.split('/').pop().replace(/\.\w+$/, '')}`, `${c.Myndavel} — ${c.Skyring || c.Vegheiti || ''}`.replace(/ — $/, ''),
       c.Breidd, c.Lengd, c.Slod, '', c.Vegheiti || '']);
+  }
+  return out;
+}
+
+// ── British Columbia · DriveBC (BC HighwayCams, ~1,050 cameras) ────────────
+// Published under the Open Government Licence – British Columbia (BC Data
+// Catalogue record "BC HighwayCams"). The JSON has no CORS header, so it is
+// served through the Worker; the images load straight from drivebc.ca.
+export async function bcCameras() {
+  const r = await fetch('https://www.drivebc.ca/api/webcams/', { headers: { 'User-Agent': UA } });
+  if (!r.ok) throw new Error('drivebc ' + r.status);
+  const out = [];
+  for (const c of await r.json()) {
+    const [lon, lat] = c.location?.coordinates || [];
+    const img = c.links?.imageDisplay;
+    if (!c.is_on || c.should_appear === false || !img || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    out.push([`bc-${c.id}`, c.caption || c.name || 'DriveBC camera', +lat.toFixed(5), +lon.toFixed(5),
+      'https://www.drivebc.ca' + img.split('?')[0], '', [c.highway_display && `Hwy ${c.highway_display}`, c.orientation].filter(Boolean).join(' · ')]);
   }
   return out;
 }

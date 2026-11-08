@@ -14548,6 +14548,10 @@ PELICAN-9
       nz:       { label: 'New Zealand',    org: 'NZ Transport Agency',                 color: '#ff9f7a', center: [173.5, -41.0],  zoom: 4.6, refreshS: 60 },
       nps:      { label: 'US National Parks', org: 'National Park Service webcams',    color: '#b47bff', center: [-104, 41],      zoom: 3.2, refreshS: 300 },
       sg:       { label: 'Singapore',      org: 'Land Transport Authority',            color: '#ff305c', center: [103.82, 1.35],  zoom: 10.5, refreshS: 60 },
+      bc:       { label: 'British Columbia', org: 'DriveBC · BC HighwayCams (OGL-BC)',  color: '#7dffcf', center: [-123.5, 51.5],  zoom: 4.6, refreshS: 120 },
+      // Québec 511 shows its cameras only in its own viewer: the map links there.
+      qc:       { label: 'Québec',         org: 'Québec 511 · MTMD (CC-BY 4.0)',       color: '#6f8cff', center: [-71.8, 46.9],   zoom: 5.4, refreshS: 300,
+                  pageLabel: 'QUÉBEC 511', pageNote: 'Québec 511 shows this camera in its own viewer.' },
     };
     const camState = {
       status: 'idle', cams: [], byId: new Map(), errors: {}, active: new Set(Object.keys(CAM_SOURCES)),
@@ -14600,6 +14604,19 @@ PELICAN-9
       es: workerIndex('es', 'es'),
       is: workerIndex('is', 'is'),
       nps: workerIndex('nps', 'nps'),
+      bc: workerIndex('bc', 'bc'),
+      async qc() {
+        // Québec open data (CC-BY 4.0), served in Web Mercator (EPSG:3857).
+        const j = await (await fetch('https://ws.mapserver.transports.gouv.qc.ca/swtq?service=wfs&version=2.0.0&request=getfeature&typename=ms:infos_cameras&outputformat=geojson')).json();
+        const R = 6378137;
+        return (j.features || []).map(f => {
+          const p = f.properties || {}, [x, y] = f.geometry?.coordinates || [];
+          if (!p.URL_FLUX_DONNEE || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+          const lon = x / R * 180 / Math.PI, lat = (2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * 180 / Math.PI;
+          return { id: 'qc-' + p.IDEcamera, src: 'qc', name: p.DescriptionLocalisationFr || p.NumeroCamera,
+            lat: +lat.toFixed(5), lon: +lon.toFixed(5), img: '', page: p.URL_FLUX_DONNEE, dir: p.NomRegionDiffusion || '' };
+        });
+      },
       async sg() {
         const j = await (await fetch('https://api.data.gov.sg/v1/transport/traffic-images')).json();
         return (j.items?.[0]?.cameras || []).map(c => ({ id: 'sg-' + c.camera_id, src: 'sg', name: 'Camera ' + c.camera_id,
@@ -14792,7 +14809,7 @@ PELICAN-9
           <div class="cam-view-h"><span style="color:${s.color}">●</span> ${escapeHtml(s.label.toUpperCase())}<button class="cam-x" id="camClose" aria-label="Close viewer">✕</button></div>
           <div class="cam-name">${escapeHtml(c.name)}</div>
           <div class="cam-meta">${escapeHtml(s.org)}${c.dir ? ' · ' + escapeHtml(c.dir) : ''}</div>
-          ${linkOnly ? `<div class="cam-frame link"><a class="cam-btn" href="${escapeHtml(c.page)}" target="_blank" rel="noopener">${c.streaming ? '▶ WATCH LIVE ON NPS.GOV ↗' : 'OPEN WEBCAM ON NPS.GOV ↗'}</a><small>This park publishes the view on its own page.</small></div>` : `
+          ${linkOnly ? `<div class="cam-frame link"><a class="cam-btn" href="${escapeHtml(c.page)}" target="_blank" rel="noopener">${c.streaming ? `▶ WATCH LIVE ON ${s.pageLabel || 'NPS.GOV'} ↗` : `OPEN WEBCAM ON ${s.pageLabel || 'NPS.GOV'} ↗`}</a><small>${escapeHtml(s.pageNote || 'This park publishes the view on its own page.')}</small></div>` : `
           <div class="cam-frame">
             ${camState.video && hasVideo
               ? `<video id="camVideo" autoplay muted playsinline loop controls></video>`
