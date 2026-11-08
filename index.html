@@ -1148,6 +1148,14 @@
     margin-bottom: 8px;
   }
   #lineFilterRows { display: contents; }
+  .line-kw { flex: 0 1 520px; }
+  .line-kw-help { color: var(--dim); font-size: 10px; letter-spacing: 0.04em; min-width: 0; }
+  .line-reset { margin-left: auto; padding: 4px 10px; border: 1px solid var(--line2); color: var(--cyan); font-size: 10px; letter-spacing: 0.1em; }
+  .line-reset:hover { color: var(--paper); border-color: var(--cyan); }
+  .line-reset[hidden] { display: none; }
+  .line-item mark { background: rgba(255,216,74,0.28); color: inherit; padding: 0 1px; border-radius: 2px; }
+  .line-item .excerpt { font-size: 12px; color: var(--dim); line-height: 1.5; margin-top: 4px; }
+  .line-item .orig { font-size: 12px; color: var(--dim); font-style: italic; margin-top: 2px; }
   .line-country { position: relative; flex: 0 1 340px; min-width: 0; display: flex; align-items: center; gap: 8px;
     padding: 5px 10px; border: 1px solid var(--line2); background: rgba(0,240,255,0.04); }
   .line-country input { flex: 1; min-width: 0; font-size: 12px; color: var(--paper); letter-spacing: 0.04em; }
@@ -1670,6 +1678,35 @@
     .alerts { right: 8px; left: 8px; top: auto; bottom: 120px; }
   }
 
+
+  /* POLITICS · PROGRAMMES */
+  .prog-intro { margin: -4px 0 14px; }
+  .prog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-items: start; }
+  .prog-card { border: 1px solid var(--line); border-top: 3px solid var(--pc); background: rgba(5,11,24,0.75); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .prog-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .prog-party { font-size: 15px; font-weight: 700; color: var(--paper); }
+  .prog-status { flex: none; font-size: 9px; letter-spacing: 0.1em; padding: 2px 6px; border: 1px solid var(--line2); color: var(--dim); }
+  .prog-status.full { color: var(--cyan); border-color: var(--cyan); }
+  .prog-status.partial { color: var(--paper); }
+  .prog-who { font-size: 12px; color: var(--paper); }
+  .prog-doc { font-size: 11px; color: var(--dim); }
+  .prog-note { font-size: 11px; color: var(--dim); font-style: italic; line-height: 1.5; }
+  .prog-body { margin-top: 4px; }
+  .prog-theme { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pc); margin: 10px 0 4px; }
+  .prog-body ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .prog-body li { font-size: 12px; line-height: 1.5; color: var(--paper); padding-left: 12px; position: relative; }
+  .prog-body li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; background: var(--pc); opacity: 0.8; }
+  .prog-body li a { font-size: 10px; }
+  .prog-body mark { background: rgba(255,216,74,0.28); color: inherit; border-radius: 2px; }
+  .prog-empty { font-size: 12px; color: var(--dim); font-style: italic; padding: 6px 0; }
+  .prog-link { align-self: flex-start; margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; }
+  @media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+    .prog-grid { grid-template-columns: minmax(0, 1fr); }
+    /* Three views no longer fit side by side on a phone: let the bar scroll. */
+    .fr-views { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .fr-views::-webkit-scrollbar { display: none; }
+    .fr-views button { flex: none; padding-inline: 10px; }
+  }
   /* ============== PHONE LAYER ==============
      Applies only to phones (and very narrow windows): nothing here reaches a
      normal desktop window. Portrait first, landscape overrides after. */
@@ -1759,7 +1796,8 @@
     .line-counts { margin-top: 4px; letter-spacing: 0.06em; }
     .line-filters { top: 0; margin: 0 -12px 6px; padding: 6px 12px 8px; border-top: 1px solid var(--line); }
     .line-filters > .line-filter-row { flex-wrap: nowrap; }
-    .line-filters > .line-filter-row > .line-filter-label { display: none; }
+    .line-filters > .line-filter-row > .line-filter-label, .line-kw-help { display: none; }
+    .line-reset { flex: none; height: 34px; }
     .line-country { flex: 1 1 auto; min-height: 34px; padding: 3px 10px; }
     .line-filter-toggle { display: inline-flex; flex: none; align-items: center; height: 34px; padding: 0 10px; font-size: 10px; letter-spacing: 0.1em; color: var(--cyan); border: 1px solid var(--line2); }
     .line-filter-toggle.active { background: rgba(0,240,255,0.16); color: var(--paper); border-color: var(--cyan); }
@@ -1942,6 +1980,16 @@
     </div>
     <div class="line-filters" id="lineFilters">
       <div class="line-filter-row">
+        <label class="line-filter-label" for="lineSearchInput">KEYWORDS</label>
+        <div class="line-country line-kw">
+          <input id="lineSearchInput" type="search" placeholder='Keywords: drone strike · "peace deal" · -football' autocomplete="off" spellcheck="false"
+            aria-describedby="lineSearchHelp" />
+          <button class="x" id="lineSearchClear" title="Clear keywords" aria-label="Clear keywords" hidden>×</button>
+        </div>
+        <span class="line-kw-help" id="lineSearchHelp">all words must appear · "exact phrase" · -word to exclude · titles, original titles and summaries</span>
+        <button class="line-reset" id="lineReset" hidden>RESET ALL</button>
+      </div>
+      <div class="line-filter-row">
         <label class="line-filter-label" for="lineCountryInput">COUNTRY</label>
         <div class="line-country">
           <input id="lineCountryInput" type="search" placeholder="Search a country (English or French)…" autocomplete="off" spellcheck="false"
@@ -1976,7 +2024,7 @@
       </div>
       <div class="desk-title" id="polTitle">POLITIQUE <b>// FRANCE</b><span class="desk-sub">10 rédactions nationales · 48 h · regroupées par sujet</span></div>
       <div class="fr-views" id="polViews" role="tablist" aria-label="Vues France">
-        <button data-fv="news" class="on">ACTUALITÉ</button><button data-fv="fiches">FICHES · PERSONNALITÉS</button>
+        <button data-fv="news" class="on">ACTUALITÉ</button><button data-fv="fiches">FICHES · PERSONNALITÉS</button><button data-fv="prog">PROGRAMMES</button>
       </div>
       <div class="desk-meta" id="polMeta">—</div>
     </div>
@@ -11594,6 +11642,33 @@ PELICAN-9
       opts[lineActive].scrollIntoView({ block: 'nearest' });
       lineInput.setAttribute('aria-activedescendant', opts[lineActive].id);
     }
+    // Keyword box: filters as you type (debounced), Esc or × clears it.
+    const lineSearch = document.getElementById('lineSearchInput');
+    const lineSearchClear = document.getElementById('lineSearchClear');
+    let lineSearchTimer;
+    function setLineQuery(q) {
+      state.lineQuery = q;
+      lineSearch.value = q;
+      lineSearchClear.hidden = !q;
+      renderLine();
+      document.getElementById('lineStage').scrollTo({ top: 0 });
+    }
+    lineSearch.addEventListener('input', () => {
+      lineSearchClear.hidden = !lineSearch.value;
+      clearTimeout(lineSearchTimer);
+      lineSearchTimer = setTimeout(() => setLineQuery(lineSearch.value), 180);
+    });
+    lineSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lineSearch.value) { e.preventDefault(); e.stopPropagation(); clearTimeout(lineSearchTimer); setLineQuery(''); }
+      if (e.key === 'Enter') { clearTimeout(lineSearchTimer); setLineQuery(lineSearch.value); lineSearch.blur(); }
+    });
+    lineSearchClear.addEventListener('click', () => { clearTimeout(lineSearchTimer); setLineQuery(''); lineSearch.focus(); });
+    document.getElementById('lineReset').addEventListener('click', () => {
+      Object.assign(state.lineFilters, { continent: 'ALL', severity: 'ALL', topic: 'ALL' });
+      state.lineQuery = ''; lineSearch.value = ''; lineSearchClear.hidden = true;
+      setLineCountry(null);
+    });
+
     function setLineCountry(name) {
       state.lineFilters.country = name || 'ALL';
       lineInput.value = name || '';
@@ -12558,7 +12633,75 @@ PELICAN-9
       if (f.topic !== 'ALL') {
         if (!matchesTopic(a, f.topic)) return false;
       }
+      const q = lineQuery();
+      if (q.inc.length || q.exc.length) {
+        const hay = articleSearchText(a);
+        if (!q.inc.every(t => termRegex(t).test(hay)) || q.exc.some(t => termRegex(t).test(hay))) return false;
+      }
       return true;
+    }
+
+    // ── Keyword search ──────────────────────────────────────────────────────
+    // Words all have to appear (AND); "quoted words" match as a phrase; -word
+    // excludes. Case and accents are ignored and a word matches the start of a
+    // longer one, so "ukrain" finds Ukraine and Ukrainian.
+    const normSearch = (s) => deaccent(String(s || '')).toLowerCase();
+    const termRegexCache = new Map();
+    function termRegex(t, flags = 'u') {
+      const k = flags + t;
+      if (!termRegexCache.has(k)) termRegexCache.set(k, new RegExp('(^|[^\\p{L}\\p{N}])(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', flags));
+      return termRegexCache.get(k);
+    }
+    let parsedQuery = { src: null, inc: [], exc: [] };
+    function lineQuery() {
+      const src = state.lineQuery || '';
+      if (parsedQuery.src === src) return parsedQuery;
+      const inc = [], exc = [];
+      for (const m of src.matchAll(/(-?)"([^"]*)"?|(-?)([^\s"]+)/g)) {
+        const neg = (m[1] || m[3]) === '-';
+        const t = normSearch(m[2] ?? m[4]).replace(/\s+/g, ' ').trim();
+        if (t) (neg ? exc : inc).push(t);
+      }
+      return (parsedQuery = { src, inc, exc });
+    }
+    function articleSearchText(a) {
+      if (a._hay == null) a._hay = normSearch([a.title, a.titleOrig, a.desc, a.domain, articleCountry(a)].join(' \n '));
+      return a._hay;
+    }
+    // Escaped HTML of `text` with every search term wrapped in <mark>.
+    function markTerms(text, terms) {
+      text = String(text || '');
+      if (!terms.length) return escapeHtml(text);
+      let norm = '';
+      const at = [];   // index in `text` of each character of `norm`
+      for (let i = 0; i < text.length; i++) for (const ch of normSearch(text[i])) { norm += ch; at.push(i); }
+      const spans = [];
+      for (const t of terms) for (const m of norm.matchAll(termRegex(t, 'gu'))) {
+        const s0 = m.index + m[1].length, s1 = s0 + m[2].length - 1;
+        spans.push([at[s0], at[s1] + 1]);
+      }
+      if (!spans.length) return escapeHtml(text);
+      spans.sort((x, y) => x[0] - y[0]);
+      let html = '', pos = 0;
+      for (const [a0, a1] of spans) {
+        if (a1 <= pos) continue;
+        const from = Math.max(a0, pos);
+        html += escapeHtml(text.slice(pos, from)) + '<mark>' + escapeHtml(text.slice(from, a1)) + '</mark>';
+        pos = a1;
+      }
+      return html + escapeHtml(text.slice(pos));
+    }
+    // Only show an original title or summary when the match is in it.
+    const hasTerm = (text, terms) => terms.length > 0 && terms.some(t => termRegex(t).test(normSearch(text)));
+    // Summary around the first match, so a hit found there can be seen.
+    function excerptAround(text, terms, len = 240) {
+      text = String(text || '');
+      const norm = normSearch(text);
+      let first = -1;
+      for (const t of terms) { const m = termRegex(t).exec(norm); if (m && (first < 0 || m.index < first)) first = m.index; }
+      const start = first > 80 ? text.lastIndexOf(' ', first - 60) + 1 : 0;
+      const cut = text.slice(start, start + len);
+      return (start > 0 ? '…' : '') + markTerms(cut, terms) + (start + len < text.length ? '…' : '');
     }
 
     function renderLine() {
@@ -12578,6 +12721,9 @@ PELICAN-9
         });
       const filtered = allDated.filter(({ a }) => articlePassesLineFilters(a));
       const items = filtered.slice(0, 120);
+      const terms = lineQuery().inc;
+      document.getElementById('lineReset').hidden =
+        !(state.lineQuery || '').trim() && Object.values(state.lineFilters).every(v => v === 'ALL');
 
       // Severity tallies on FILTERED set
       let nCrit = 0, nElev = 0, nMod = 0;
@@ -12592,9 +12738,9 @@ PELICAN-9
 
       if (!items.length) {
         const hasArticles = state.articles.length > 0;
-        const someFilterActive = Object.values(state.lineFilters).some(v => v !== 'ALL');
+        const someFilterActive = Object.values(state.lineFilters).some(v => v !== 'ALL') || !!(state.lineQuery || '').trim();
         const msg = hasArticles && someFilterActive
-          ? 'No articles match the current filters. Reset a filter to see more.'
+          ? 'No articles match the current keywords and filters. Loosen one, or RESET ALL.'
           : 'No articles loaded. WIRE feed appears here as it comes in.';
         lineTrack.innerHTML = `<div class="line-empty">${msg}</div>`;
         return;
@@ -12615,7 +12761,9 @@ PELICAN-9
                 ${tagsHtml}
               </div>
               <div class="date">${escapeHtml(dateLabel(date))}</div>
-              <div class="body">${escapeHtml(a.title || '')}</div>
+              <div class="body">${markTerms(a.title, terms)}</div>
+              ${a.titleOrig && a.titleOrig !== a.title && hasTerm(a.titleOrig, terms) && !hasTerm(a.title, terms) ? `<div class="orig">${markTerms(a.titleOrig, terms)}</div>` : ''}
+              ${a.desc && a.desc !== a.title && hasTerm(a.desc, terms) ? `<div class="excerpt">${excerptAround(a.desc, terms)}</div>` : ''}
               <div class="src">${escapeHtml(a.domain || '')}</div>
             </div>
             <div class="ago">${escapeHtml(timeAgo(date))}</div>
@@ -15331,9 +15479,9 @@ PELICAN-9
 
     const deskState = {
       fr: { data: null, loadedAt: 0, loading: null, stories: [], filter: { theme: null, party: null, person: null, q: '' },
-        view: 'news', fiche: { id: null, q: '', party: null } },
+        view: 'news', fiche: { id: null, q: '', party: null }, prog: { theme: null, q: '' } },
       us: { data: null, loadedAt: 0, loading: null, stories: [], filter: { theme: null, party: null, person: null, q: '' },
-        view: 'news', fiche: { id: null, q: '', party: null } },
+        view: 'news', fiche: { id: null, q: '', party: null }, prog: { theme: null, q: '' } },
       polCountry: 'fr',
       polls: { data: null, loadedAt: 0, loading: null, failed: false },
       biz: { data: null, loadedAt: 0, loading: null, stories: [] },
@@ -15443,7 +15591,7 @@ PELICAN-9
     // applies to every procedure not definitively judged.
     const FR_FICHES_AS_OF = 'fin 2025';
     const FR_PARTY_COLOR = { RN: '#4a6bff', LFI: '#ff305c', EPR: '#ffd84a', LR: '#4ad6ff', PS: '#ff6fa8', ECO: '#3ddc84',
-      HOR: '#00f0ff', MDM: '#ff9d3c', UDR: '#7d8cff', REC: '#a35cff', DVG: '#ff8fb8', PCF: '#e0303a', DIV: '#9aa7b8' };
+      HOR: '#00f0ff', MDM: '#ff9d3c', UDR: '#7d8cff', REC: '#a35cff', DVG: '#ff8fb8', PCF: '#e0303a', DIV: '#9aa7b8', NE: '#d4a24c' };
     const FR_FICHES = [
       { id: 'macron', name: 'Emmanuel Macron', party: 'EPR', partyLabel: 'Renaissance (fondateur)', kw: /\bMacron\b/,
         role: 'Président de la République (depuis 2017)', born: '21 déc. 1977 · Amiens', training: 'Sciences Po, ENA (2004), Inspection des finances',
@@ -16202,11 +16350,158 @@ PELICAN-9
       'The This That These Those What When Where Why How Who After Before From With Here Live Updates Watch Opinion Analysis Breaking Monday Tuesday Wednesday Thursday Friday Saturday Sunday ' +
       'Decision Desk Minority Majority Leader Whip January February March April May June July August September October November December District Columbia Texas California Florida Ohio Virginia Carolina Dakota Jersey Hampshire Mexico').split(' '));
 
+
+    // ── PROGRAMMES ──────────────────────────────────────────────────────────
+    // What each party has actually published, read on its official site (or,
+    // where noted, in the press) on the date below. Measures are short faithful
+    // summaries, never invented: a party with nothing published says so.
+    // Ordered left to right, like the voting-intention bar. Theme keys: eco,
+    // work, social, sec, env, inst.
+    const FR_PROG_AS_OF = '8 novembre 2026';
+    const FR_PROG_THEMES = [['eco', 'Économie · Budget'], ['work', 'Travail · Retraites'], ['social', 'Social · Éducation · Santé'],
+      ['sec', 'Immigration · Sécurité'], ['env', 'Énergie · Écologie'], ['inst', 'Institutions · Europe · Défense']];
+    const FR_PROGRAMMES = [
+      { party: 'PCF', label: 'Parti communiste', who: 'Fabien Roussel', status: 'none',
+        doc: 'Candidat désigné le 6 septembre 2026 (72 % des militants)', url: 'https://www.fabienroussel2027.fr/',
+        note: 'Programme 2027 pas encore publié. Le site de campagne n’annonce que cinq axes (« Vivre mieux », « Vivre heureux », « Vivre ensemble », « Vivre longtemps », « Vivre en paix »).', m: [] },
+      { party: 'LFI', label: 'La France insoumise', who: 'Jean-Luc Mélenchon', status: 'full',
+        doc: '« L’Avenir en commun », présenté le 7 novembre 2026', url: 'https://melenchon2027.fr/programme/livre',
+        note: 'Publié sans chiffrage détaillé ; environ 50 livrets doivent compléter le programme.', m: [
+        ['work', 'SMIC porté à 1 700 € net par mois ; salaires indexés sur l’inflation, dans le privé et le public.'],
+        ['work', 'Abrogation du passage à 64 ans, puis retraite à taux plein à 60 ans après 40 annuités.'],
+        ['work', 'Retour effectif aux 35 h ; 32 h dans les métiers pénibles ou de nuit ; une 6e semaine de congés payés.'],
+        ['eco', 'Impôt sur le revenu à 14 tranches au lieu de 5 ; rétablissement de l’ISF avec un volet climatique.'],
+        ['eco', 'Impôt plancher de 2 % sur le patrimoine des « centimillionnaires » ; fin de la flat tax sur les revenus du capital.'],
+        ['eco', 'Successions : exonération sous 150 000 €, plafond de 12 M€ par héritage.'],
+        ['eco', 'Blocage des prix des produits de première nécessité (alimentation, énergie, carburants).'],
+        ['social', '« 100 % Sécu » : soins prescrits remboursés intégralement ; arrêts maladie payés à 100 %.'],
+        ['social', 'Garantie d’autonomie : aucun revenu sous le seuil de pauvreté (1 337 € pour une personne seule).'],
+        ['inst', 'Constituante pour passer à une 6e République ; référendum d’initiative citoyenne ; vote à 16 ans.'],
+        ['inst', 'Assemblée élue à la proportionnelle ; fin du 49.3.'],
+        ['inst', 'Moratoire sur des règles européennes (semestre européen, concurrence dans les services publics, accords de libre-échange) ; suspension de l’accord UE-Israël.'],
+        ['sec', 'Refus d’appliquer le pacte européen sur la migration et l’asile.'],
+        ['env', 'Sortie progressive du nucléaire ; objectif 100 % renouvelable repoussé de 2050 à 2060.', 'https://www.euronews.com/2026/11/07/melenchon-presents-party-manifesto-as-social-unrest-continues-across-france'],
+      ] },
+      { party: 'PS', label: 'PS · Place publique', who: 'Raphaël Glucksmann', status: 'none',
+        doc: 'Vainqueur de la primaire PS – Place publique (octobre 2026)', url: 'https://glucks2027.fr/',
+        note: 'Programme 2027 pas encore publié. Meeting de lancement prévu le 6 décembre 2026.', m: [] },
+      { party: 'ECO', label: 'Les Écologistes', who: 'Marine Tondelier', status: 'none',
+        doc: 'Désignée par son parti en décembre 2025 pour une primaire de la gauche, abandonnée depuis', url: 'https://www.lesecologistes.fr/',
+        note: 'Aucun programme 2027 publié ; la candidature reste à confirmer.', m: [] },
+      { party: 'EPR', label: 'Renaissance', who: 'Gabriel Attal', status: 'partial',
+        doc: 'Programme publié au fil de la campagne : 96 mesures annoncées', url: 'https://attalpresident.fr/programme',
+        note: 'Pas encore de position sur l’âge de départ à la retraite.', m: [
+        ['eco', 'Aucune hausse d’impôts pendant 5 ans ; déficit ramené sous 3 % avant 2032.'],
+        ['eco', '100 000 postes en moins dans l’État et les collectivités.'],
+        ['eco', 'Une loi de programmation économique, fiscale et énergétique sur dix ans.'],
+        ['work', '« Droit au brut » : un 13e mois pour les classes moyennes qui travaillent.'],
+        ['work', 'Remplacer le Code du travail par une « Constitution du travail » ; réforme de l’assurance chômage (5 Md€ d’économies).'],
+        ['work', 'Retraites : une part de capitalisation, fléchée vers l’innovation.'],
+        ['sec', 'Immigration choisie : système à points et quotas révisés tous les deux ans ; regroupement familial durci.'],
+        ['sec', 'Comparution immédiate pour les mineurs ; 3 000 magistrats et greffiers recrutés.'],
+        ['social', 'Rétablir le redoublement ; brevet obligatoire pour entrer au lycée ; 200 à 500 € nets de plus par mois pour les enseignants.'],
+        ['env', 'Prix de l’électricité garantis stables sur 5 ans ; bouclier tarifaire sur l’eau ; géothermie multipliée par 5 d’ici 2035.'],
+        ['env', 'Refuser le traité Mercosur ; clauses miroirs dans tous les accords commerciaux.'],
+        ['inst', 'Une journée référendaire par an ; suppression d’un échelon de collectivité.'],
+        ['inst', '200 Md€ investis dans l’IA ; préférence européenne dans les achats de défense ; « dôme de fer » européen.'],
+      ] },
+      { party: 'HOR', label: 'Horizons', who: 'Édouard Philippe', status: 'partial',
+        doc: 'Quatre priorités détaillées sur le site de campagne (2026)', url: 'https://www.edouardphilippe.fr/',
+        note: 'Pas de programme complet en un seul document à ce jour.', m: [
+        ['work', 'Retraite : âge porté à 65 ans et 45 annuités, progressivement, en moins de dix ans ; départs anticipés maintenus.'],
+        ['work', 'Retraite par capitalisation collective pour tous les salariés, 500 € versés par l’État dès le premier emploi.'],
+        ['work', 'Sortie des 35 h par accord d’entreprise : zéro cotisation patronale au-delà de la 37e heure.'],
+        ['work', 'Chômage indemnisé 12 mois maximum avant 50 ans (18 aujourd’hui) ; 3 jours de carence dans le privé et le public.'],
+        ['eco', 'Règle d’or budgétaire par référendum ; déficit ramené de plus de 5 % à 2 % du PIB en fin de mandat.'],
+        ['eco', 'Un départ de fonctionnaire sur trois remplacé (plus de 250 000 postes) ; ni nouvel impôt ni nouvelle norme pendant le mandat.'],
+        ['eco', 'Pacte fiscal : 50 Md€ de baisse des impôts de production, compensés par 50 Md€ d’aides publiques en moins.'],
+        ['sec', 'Diviser par deux l’immigration ; dénoncer l’accord franco-algérien de 1968 ; regroupement familial suspendu pendant le mandat.'],
+        ['sec', 'Peines planchers et courtes peines dès la première infraction ; « état d’urgence narco » ; droit du sol suspendu à Mayotte.'],
+        ['sec', 'Réservistes portés de 45 000 à 250 000 ; nouvelle loi de programmation militaire.'],
+        ['social', 'Allocation familiale unique de 350 € dès le premier enfant ; salaire moyen des enseignants +20 % sur le mandat.'],
+        ['social', 'Portable interdit à l’école et au collège ; « amende de responsabilité » pour certains parents.'],
+        ['env', '8 réacteurs EPR de plus que les 6 prévus ; prix du carbone aux frontières de l’UE.'],
+      ] },
+      { party: 'LR', label: 'Les Républicains', who: 'Bruno Retailleau', status: 'partial',
+        doc: 'Projet publié par thèmes : 120 mesures sur 11 thèmes', url: 'https://www.avecretailleau.fr/projet',
+        note: 'Thèmes encore « à venir » : justice, immigration, sécurité, culture, santé, tourisme, écologie.', m: [
+        ['inst', 'Référendum ouvert à toute la matière législative ; « dernier mot au peuple » quand une loi est censurée.'],
+        ['inst', 'Écarter le droit européen lorsqu’il excède ses compétences.'],
+        ['inst', 'Inscrire la laïcité et les « racines judéo-chrétiennes » dans la Constitution ; supprimer le principe de précaution par référendum.'],
+        ['sec', 'Supprimer le droit du sol ; quotas migratoires fixés par la loi.'],
+        ['sec', 'Prestations sociales conditionnées à cinq ans de séjour et de travail.'],
+        ['work', 'Départ possible dès 63 ans, taux plein garanti à 65 ans ; suppression du « couperet » des 67 ans.'],
+        ['work', 'Un capital retraite pour chaque salarié.'],
+        ['eco', 'Règle d’or ; trajectoire de 197 Md€, dont 146 Md€ pour réduire le déficit ; agences de l’État supprimées (56 Md€).'],
+        ['eco', 'Entreprises : supprimer 100 règles, refonder le Code du travail sur 50 principes, réduire de 60 % leur « handicap fiscal ».'],
+        ['env', 'Électricité : 10 mesures, dont réacteurs EPR2, neutrons rapides et hydroélectricité.'],
+      ] },
+      { party: 'NE', label: 'Nouvelle Énergie', who: 'David Lisnard', status: 'partial',
+        doc: '« Le programme de Nouvelle Énergie pour 2027 » (résumé en ligne)', url: 'https://www.unenouvelleenergie.fr/notre-programme/',
+        note: 'Le site présente surtout des orientations ; le détail chiffré n’est pas publié.', m: [
+        ['eco', 'Réduction drastique des dépenses publiques (200 Md€ d’économies) ; « choc massif de dérégulation ».'],
+        ['eco', 'Baisse de la CSG sur les salaires.'],
+        ['work', 'Liberté de se constituer un capital pour sa retraite (capitalisation).'],
+        ['sec', 'Politique migratoire décidée par référendum, indépendamment des cours européennes.'],
+        ['social', 'Suppression de la carte scolaire ; autonomie des établissements.'],
+        ['inst', 'Décentralisation radicale vers les collectivités locales.'],
+      ] },
+      { party: 'RN', label: 'Rassemblement national', who: 'Marine Le Pen', status: 'none',
+        doc: 'Candidate déclarée éligible en appel le 7 juillet 2026 ; la Cour de cassation doit encore statuer', url: 'https://rassemblementnational.fr/',
+        note: 'Aucun programme 2027 complet vérifiable à ce jour. Un contre-budget a été présenté le 6 octobre 2026 (125 Md€ d’économies d’ici 2032, selon la presse).', m: [] },
+      { party: 'REC', label: 'Reconquête', who: 'Éric Zemmour', status: 'none',
+        doc: 'Programme en préparation via une consultation en ligne', url: 'https://www.ericzemmour.fr/',
+        note: 'Programme 2027 pas encore publié ; le site présente encore les priorités de 2022.', m: [] },
+    ];
+
+    // USA: no 2028 platform exists before the summer 2028 conventions, so the
+    // platforms in force are the ones adopted in 2024.
+    const US_PROG_AS_OF = 'Nov. 8, 2026';
+    const US_PROG_THEMES = [['eco', 'Economy · Taxes'], ['work', 'Jobs · Wages · Housing'], ['social', 'Health · Social Security · Education'],
+      ['sec', 'Immigration · Crime'], ['env', 'Energy · Climate'], ['inst', 'Democracy · Rights · World']];
+    const US_PROGRAMMES = [
+      { party: 'DEM', label: 'Democratic Party', who: '2024 platform (Harris–Walz ticket)', status: 'full',
+        doc: 'Adopted August 19, 2024 at the Chicago convention', url: 'https://www.presidency.ucsb.edu/documents/2024-democratic-party-platform',
+        note: 'Still the party’s official platform; the next one will be adopted at the 2028 convention.', m: [
+        ['eco', 'No federal tax increase for anyone earning under $400,000 a year.'],
+        ['eco', '25% minimum income tax on billionaires; corporate tax rate from 21% to 28%; stock-buyback tax raised to 4%.'],
+        ['work', 'Federal minimum wage of at least $15 an hour.'],
+        ['work', 'Build or renovate 2 million homes; $25,000 down-payment help for first-generation homebuyers.'],
+        ['work', 'Restore the expanded Child Tax Credit; child care under $10 a day per child.'],
+        ['social', 'Protect and expand the Affordable Care Act; $35 insulin cap for everyone; Medicare to negotiate at least 50 drugs a year.'],
+        ['social', 'No Social Security privatization or benefit cuts; the wealthiest to pay more to keep it and Medicare solvent.'],
+        ['social', 'Restore the right to choose (federal abortion protections).'],
+        ['env', 'Triple clean-energy generation by 2030; faster permitting for clean energy.'],
+        ['sec', 'Secure the border and fix the immigration system.'],
+        ['inst', 'Strengthen NATO and restore American leadership in the world.'],
+      ] },
+      { party: 'GOP', label: 'Republican Party', who: '2024 platform (Trump–Vance ticket)', status: 'full',
+        doc: 'Adopted July 15, 2024 at the Milwaukee convention', url: 'https://www.presidency.ucsb.edu/documents/2024-republican-party-platform',
+        note: 'Still the party’s official platform; the next one will be adopted at the 2028 convention. Built around “20 promises”.', m: [
+        ['sec', 'Seal the border; carry out “the largest deportation operation in American history”; finish the border wall.'],
+        ['sec', 'End sanctuary-city funding; reinstate “Remain in Mexico” and the travel ban; end chain migration.'],
+        ['eco', 'Make the 2017 Trump tax cuts permanent; no tax on tips; further tax cuts for workers.'],
+        ['eco', 'Baseline tariffs on foreign goods; revoke China’s most-favored-nation status.'],
+        ['eco', 'End inflation and “make America affordable again”; keep the dollar the world’s reserve currency.'],
+        ['env', 'Make America the world’s dominant energy producer; lift limits on oil, gas and coal; cancel the electric-vehicle mandate.'],
+        ['social', 'No cuts to Social Security or Medicare, and no change to the retirement age.'],
+        ['social', 'Close the Department of Education; universal school choice.'],
+        ['social', 'Abortion left to the states; supports access to birth control and IVF.'],
+        ['inst', 'Voter ID, paper ballots, proof of citizenship and same-day voting.'],
+        ['inst', 'Prevent World War III; allies must meet their defense obligations; build an Iron Dome missile shield.'],
+      ] },
+    ];
     const POL = {
       fr: {
         key: 'fr', country: 'France', locale: 'fr-FR', parties: FR_PARTIES, themes: FR_THEMES, stop: FR_CAP_STOP,
         fiches: FR_FICHES, asOf: FR_FICHES_AS_OF, partyColor: FR_PARTY_COLOR,
+        programmes: FR_PROGRAMMES, progThemes: FR_PROG_THEMES, progAsOf: FR_PROG_AS_OF,
         t: {
+          progTab: 'PROGRAMMES', progMeta: (n, d) => `<b>${n}</b> partis · état des publications au ${d}`,
+          progStatus: { full: 'PROGRAMME PUBLIÉ', partial: 'PUBLICATION PARTIELLE', none: 'PAS ENCORE PUBLIÉ' },
+          progSearch: 'Rechercher une mesure (ex : retraite, SMIC, nucléaire)…', progSource: 'Source officielle ↗', progSrc: 'source',
+          progNone: 'Aucune mesure publiée à ce jour.', progNoMatch: 'Aucune mesure ne correspond pour ce parti.',
+          progNote: 'Résumés fidèles des textes publiés par chaque parti ou candidat, sans jugement. Ils évoluent au fil de la campagne : vérifiez la source.',
           title: 'POLITIQUE', name: 'FRANCE', sub: '10 rédactions nationales · 48 h · regroupées par sujet',
           news: 'ACTUALITÉ', ficheTab: 'FICHES · PERSONNALITÉS', viewsLabel: 'Vues France',
           noProxy: 'Ce bureau a besoin du Worker (API_PROXY) : il agrège 10 rédactions côté serveur.',
@@ -16231,7 +16526,13 @@ PELICAN-9
       us: {
         key: 'us', country: 'United States', locale: 'en-US', parties: US_PARTIES, themes: US_THEMES, stop: US_CAP_STOP,
         fiches: US_FICHES, asOf: US_FICHES_AS_OF, partyColor: { GOP: '#ff5a5f', DEM: '#4d9aff', IND: '#c9a0ff' },
+        programmes: US_PROGRAMMES, progThemes: US_PROG_THEMES, progAsOf: US_PROG_AS_OF,
         t: {
+          progTab: 'PLATFORMS', progMeta: (n, d) => `<b>${n}</b> national platforms in force · checked ${d}`,
+          progStatus: { full: 'PLATFORM IN FORCE', partial: 'PARTIAL', none: 'NOT PUBLISHED' },
+          progSearch: 'Search a commitment (e.g. tariffs, Medicare, border)…', progSource: 'Official text ↗', progSrc: 'source',
+          progNone: 'Nothing published yet.', progNoMatch: 'No commitment matches for this party.',
+          progNote: 'Faithful summaries of each party’s 2024 platform, the latest adopted. Platforms for 2028 are written at the summer 2028 conventions.',
           title: 'POLITICS', name: 'USA', sub: '10 national newsrooms · 48 h · grouped by story',
           news: 'NEWS', ficheTab: 'PROFILES', viewsLabel: 'USA views',
           noProxy: 'This desk needs the Worker (API_PROXY): it aggregates 10 newsrooms server-side.',
@@ -16478,6 +16779,50 @@ PELICAN-9
         row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
       });
     }
+
+    function renderPolProgrammes() {
+      const el = document.getElementById('polBody');
+      const cfg = polCfg(), T = cfg.t, st = polSt(), f = st.prog;
+      const progs = cfg.programmes;
+      document.getElementById('polMeta').innerHTML = T.progMeta(progs.length, cfg.progAsOf);
+      const terms = f.q.trim().split(/\s+/).map(normSearch).filter(Boolean);
+      const themeName = Object.fromEntries(cfg.progThemes);
+      const pcol = (id) => cfg.partyColor[id] || 'var(--cyan)';
+      const counts = Object.fromEntries(cfg.progThemes.map(([k]) => [k, progs.reduce((n, p) => n + p.m.filter(m => m[0] === k).length, 0)]));
+      const keep = (m) => (!f.theme || m[0] === f.theme) && terms.every(t => termRegex(t).test(normSearch(m[1] + ' ' + themeName[m[0]])));
+      const cards = progs.map(p => {
+        const ms = p.m.filter(keep);
+        // Group by theme, in the theme order, so parties read side by side.
+        const groups = cfg.progThemes.map(([k, label]) => [label, ms.filter(m => m[0] === k)]).filter(([, l]) => l.length);
+        const body = !p.m.length ? `<div class="prog-empty">${T.progNone}</div>`
+          : !ms.length ? `<div class="prog-empty">${T.progNoMatch}</div>`
+          : groups.map(([label, l]) => `<div class="prog-theme">${escapeHtml(label)}</div><ul>${l.map(m =>
+              `<li>${markTerms(m[1], terms)}${m[2] ? ` <a href="${escapeHtml(m[2])}" target="_blank" rel="noopener">${T.progSrc}</a>` : ''}</li>`).join('')}</ul>`).join('');
+        return `<article class="prog-card" style="--pc:${pcol(p.party)}">
+          <header><span class="prog-party">${escapeHtml(p.label)}</span><span class="prog-status ${p.status}">${T.progStatus[p.status]}</span></header>
+          <div class="prog-who">${escapeHtml(p.who)}</div>
+          <div class="prog-doc">${escapeHtml(p.doc)}</div>
+          ${p.note ? `<div class="prog-note">${escapeHtml(p.note)}</div>` : ''}
+          <div class="prog-body">${body}</div>
+          <a class="prog-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${T.progSource}</a>
+        </article>`;
+      }).join('');
+      el.innerHTML = `
+        <div class="desk-toolbar"><input class="desk-search" id="progSearch" type="search" placeholder="${escapeHtml(T.progSearch)}" value="${escapeHtml(f.q)}" autocomplete="off" /></div>
+        <div class="desk-chips" id="progThemes">
+          <button class="desk-chip${f.theme ? '' : ' on'}" data-pt="">${escapeHtml(T.allThemes)}</button>
+          ${cfg.progThemes.map(([k, label]) => `<button class="desk-chip${f.theme === k ? ' on' : ''}" data-pt="${k}">${escapeHtml(label)}<span class="n">${counts[k]}</span></button>`).join('')}
+        </div>
+        <p class="desk-note prog-intro">${escapeHtml(T.progNote)}</p>
+        <div class="prog-grid">${cards}</div>`;
+      el.querySelectorAll('[data-pt]').forEach(b => b.addEventListener('click', () => { f.theme = b.dataset.pt || null; renderPolProgrammes(); }));
+      const input = document.getElementById('progSearch');
+      let t;
+      input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => {
+        f.q = input.value; renderPolProgrammes();
+        const i2 = document.getElementById('progSearch'); i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length);
+      }, 200); });
+    }
     function setPoliticsView(view, ficheId) {
       const st = polSt();
       st.view = view;
@@ -16498,7 +16843,7 @@ PELICAN-9
       document.getElementById('polTitle').innerHTML = `${T.title} <b>// ${T.name}</b><span class="desk-sub">${T.sub}</span>`;
       document.getElementById('polViews').setAttribute('aria-label', T.viewsLabel);
       document.querySelectorAll('#polViews [data-fv]').forEach(b => {
-        b.textContent = b.dataset.fv === 'news' ? T.news : T.ficheTab;
+        b.textContent = b.dataset.fv === 'news' ? T.news : b.dataset.fv === 'prog' ? T.progTab : T.ficheTab;
         b.classList.toggle('on', b.dataset.fv === st.view);
       });
       document.getElementById('politicsStage').scrollTo({ top: 0 });
@@ -16510,6 +16855,7 @@ PELICAN-9
       renderPolTrend();
       const cfg = polCfg(), T = cfg.t, st = polSt();
       if (st.view === 'fiches') return renderPolFiches();
+      if (st.view === 'prog') return renderPolProgrammes();
       const el = document.getElementById('polBody');
       const head = document.getElementById('polMeta');
       if (!API_PROXY) { el.innerHTML = `<div class="desk-empty">${T.noProxy}</div>`; return; }
