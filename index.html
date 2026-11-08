@@ -680,7 +680,7 @@
 
   .hint { font-size: 10px; opacity: 0.55; text-align: center; letter-spacing: 0.14em; line-height: 1.6; }
 
-  .readout { text-align: right; font-size: 11px; }
+  .readout { text-align: right; font-size: 11px; margin-left: auto; }   /* stays right when the legend and hint are hidden */
   .readout .count {
     font-size: 32px; font-weight: 700; line-height: 1;
     color: var(--cyan); text-shadow: 0 0 12px rgba(0,240,255,0.55);
@@ -11801,6 +11801,7 @@ PELICAN-9
 
     function enterConflictInspection(c) {
       state.selectedConflict = c;
+      queueMicrotask(updateCount);   // readout follows the inspected conflict
       // Compute conflict angular span — drives label sizing.
       const capA = capitalFor(c.sideA);
       const capB = capitalFor(c.sideB);
@@ -11847,6 +11848,7 @@ PELICAN-9
     function exitConflictInspection() {
       if (!state.selectedConflict) return;
       state.selectedConflict = null;
+      queueMicrotask(updateCount);
       document.body.classList.remove('inspecting-conflict');
       clearInspectLocations();
       resetBorderHighlight();
@@ -13469,6 +13471,23 @@ PELICAN-9
         const top = [...state.crypto].sort((a,b)=>Math.abs(b.price_change_percentage_24h ?? 0)-Math.abs(a.price_change_percentage_24h ?? 0))[0];
         countEl.textContent = top ? (top.price_change_percentage_24h ?? 0).toFixed(1) : '--';
         countLabel.innerHTML = top ? `${escapeHtml(top.symbol?.toUpperCase())} · TOP MOVER %` : 'MARKETS LIVE';
+      } else if (state.tab === 'conflicts') {
+        // Every tab sets its own readout: without this branch the last one
+        // (often the MARKETS top mover) stayed on screen.
+        updateConflictActivity();
+        const c = state.selectedConflict;
+        if (c) {
+          countEl.textContent = String(conflictActivity.get(c.id)?.score || 0).padStart(3, '0');
+          countLabel.innerHTML = `ARTICLES 24H · ${escapeHtml(c.title.toUpperCase())}`;
+        } else {
+          const wars = CONFLICTS.filter(x => x.type === 'war').length;
+          const inNews = CONFLICTS.filter(x => (conflictActivity.get(x.id)?.score || 0) > 0).length;
+          countEl.textContent = String(CONFLICTS.length).padStart(3, '0');
+          countLabel.innerHTML = `CONFLICTS TRACKED · <b style="color:var(--red)">${wars}</b> ACTIVE WARS · ${inNews} IN THE NEWS 24H`;
+        }
+      } else if (state.tab === 'outbreaks') {
+        countEl.textContent = String(OUTBREAKS.length).padStart(3, '0');
+        countLabel.innerHTML = 'OUTBREAKS TRACKED';
       }
     }
 
