@@ -1593,40 +1593,6 @@
   }
   .brief-btn:hover { background: rgba(0,240,255,0.2); box-shadow: 0 0 22px rgba(0,240,255,0.35); }
 
-  /* ============== ALERT TOAST ============== */
-  .alerts {
-    position: fixed; top: 100px; right: 22px; z-index: 80;
-    display: flex; flex-direction: column; gap: 10px;
-    width: 320px;
-    pointer-events: none;
-  }
-  .alert {
-    background: rgba(2,10,18,0.95);
-    border: 1px solid;
-    padding: 12px 14px;
-    font-size: 11px; line-height: 1.5;
-    box-shadow: 0 0 30px rgba(0,0,0,0.6);
-    opacity: 0; transform: translateX(20px);
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    pointer-events: auto;
-  }
-  .alert.on { opacity: 1; transform: translateX(0); }
-  .alert.up   { border-color: var(--green); box-shadow: 0 0 30px rgba(63,255,142,0.25); }
-  .alert.down { border-color: var(--red);   box-shadow: 0 0 30px rgba(255,48,92,0.25); }
-  .alert .hdr {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 9px; letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--dim);
-    margin-bottom: 6px;
-  }
-  .alert .hdr img { width: 16px; height: 16px; border-radius: 50%; }
-  .alert .hdr b { color: var(--paper); font-size: 11px; letter-spacing: 0.1em; }
-  .alert .move { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .alert .move.up { color: var(--green); }
-  .alert .move.down { color: var(--red); }
-  .alert .why { color: var(--paper); margin-top: 4px; opacity: 0.75; }
-  .alert .close { position: absolute; top: 6px; right: 8px; color: var(--dim); }
 
   /* ============== MOBILE (≤ 760px) ==============
      Globe stays full-screen; the wire becomes a bottom sheet; the country
@@ -1675,7 +1641,6 @@
     .brief-stats { flex-wrap: nowrap; overflow-x: auto; }
     .reader { top: 8px; bottom: 8px; width: calc(100vw - 16px); }
     .reader-content .hero.thumb { float: none; margin: 0 0 14px; }
-    .alerts { right: 8px; left: 8px; top: auto; bottom: 120px; }
   }
 
 
@@ -1774,10 +1739,6 @@
     body.has-ticker .rot-toggle { top: calc(var(--top-h, 90px) + 70px); }
     .country-back { top: calc(var(--top-h, 90px) + 6px); bottom: auto; left: 6px; transform: none; padding: 6px 10px; max-width: calc(100vw - 90px); }
     .tip { left: 8px !important; right: 8px; top: auto !important; bottom: calc(var(--bottom-h) + 8px); transform: none; max-width: none; }
-    /* One alert at a time (newest first): a stack would fill the whole screen. */
-    .alerts { top: calc(var(--top-h, 90px) + 6px); bottom: auto; left: 6px; right: 6px; width: auto; }
-    .alert { padding-block: 6px; pointer-events: none; }
-    .alert:not(:first-child), .alert .why { display: none; }
     body.sheet-max .country-back { display: none; }
 
     /* ---- Full-screen stages: no sticky headers eating the screen ---- */
@@ -2122,7 +2083,6 @@
     <div class="name" id="tipName"></div>
     <div class="meta" id="tipMeta"></div>
   </div>
-  <div class="alerts" id="alerts"></div>
 
   <!-- Bundled TLE snapshot: offline/file:// fallback for the ORBIT tab.
        ~1700 satellites; satellite.js propagates these in real time so
@@ -8873,7 +8833,6 @@ PELICAN-9
       viewMode: 'globe',
       openArticles: [],        // [{id, ...articleData, related}]
       activeArticleId: null,
-      lastAlertedSym: new Map(), // sym -> timestamp
     };
 
     // ════════════════════════════════════════════════════════════════
@@ -11445,11 +11404,6 @@ PELICAN-9
         state.crypto = await r.json();
         saveLS('wrldmon_crypto', state.crypto);
         renderTicker();
-        // Check for big moves vs initial baseline (uses 24h %)
-        for (const c of state.crypto) {
-          const chg = c.price_change_percentage_24h ?? 0;
-          if (Math.abs(chg) >= 5) emitMoveAlert(c, chg);
-        }
         if (state.tab === 'markets') renderFeedMarkets();
       } catch (err) {
         console.warn('CoinGecko failed', err);
@@ -12872,7 +12826,49 @@ PELICAN-9
       return p.toFixed(4);
     }
 
+    // ── Live index levels for the MARKETS globe (Yahoo via the Worker's /quotes).
+    // range=1d, so prevClose is the previous session's close → daily change.
+    const idxLive = new Map();   // Yahoo symbol → quote
+    let idxLiveAt = 0, idxLiveBusy = null;
+    const IDX_LIVE_EVERY = 60e3;
+    function idxSymbol(country, name) {
+      try {   // COUNTRY_TICKERS is declared further down the module
+        return COUNTRY_TICKERS[country]?.idx.find(([n]) => n === name || n.startsWith(name + ' ('))?.[1] || null;
+      } catch { return null; }
+    }
+    function idxLiveFor(country, name) {
+      const sym = idxSymbol(country, name);
+      const q = sym ? idxLive.get(sym) : null;
+      if (!q || q.price == null) return { sym, q: null, chg: null };
+      const chg = q.prevClose ? (q.price - q.prevClose) / q.prevClose * 100 : null;
+      return { sym, q, chg };
+    }
+    const fmtIdx = (p) => Number(p).toLocaleString('en-US', { maximumFractionDigits: p < 100 ? 2 : 1 });
+    const chgArrow = (chg) => chg == null ? '' : `${chg >= 0 ? '▲' : '▼'} ${Math.abs(chg).toFixed(2)}%`;
+    function loadIndexQuotes(force = false) {
+      if (!API_PROXY) return null;
+      if (idxLiveBusy) return idxLiveBusy;
+      if (!force && Date.now() - idxLiveAt < IDX_LIVE_EVERY) return null;
+      const syms = [...new Set(Object.entries(COUNTRY_MARKETS)
+        .flatMap(([c, d]) => d.indices.map(n => idxSymbol(c, n))).filter(Boolean))];
+      if (!syms.length) return null;
+      const chunks = [];
+      for (let i = 0; i < syms.length; i += 25) chunks.push(syms.slice(i, i + 25));
+      idxLiveBusy = Promise.allSettled(chunks.map(async (chunk) => {
+        const r = await fetch(`${API_PROXY}/quotes?range=1d&symbols=${chunk.map(encodeURIComponent).join(',')}`);
+        if (!r.ok) throw new Error('http ' + r.status);
+        for (const q of (await r.json()).quotes || []) if (!q.error && q.price != null) idxLive.set(q.symbol.toUpperCase(), q);
+      })).then((res) => {
+        for (const x of res) if (x.status === 'rejected') console.warn('index quotes', x.reason);
+        idxLiveAt = Date.now();
+        idxLiveBusy = null;
+        if (state.tab === 'markets' && (state.mktView || 'globe') === 'globe') renderFeedMarkets();
+      });
+      return idxLiveBusy;
+    }
+
     function renderFeedMarkets() {
+      loadIndexQuotes();
       if (state.selectedMarketCountry) return renderMarketCountryDetail(state.selectedMarketCountry);
 
       rightTitle.innerHTML = 'MARKETS <b>// OVERVIEW</b>';
@@ -12893,7 +12889,11 @@ PELICAN-9
           <div class="market-row" data-mcountry="${escapeHtml(name)}" style="cursor:pointer;">
             <div class="nm">
               <b>${escapeHtml(name)}</b>
-              <div class="sub">${escapeHtml(d.indices[0])} · ${d.currency}</div>
+              <div class="sub">${(() => {
+                const { q, chg } = idxLiveFor(name, d.indices[0]);
+                return escapeHtml(d.indices[0]) + (q ? ` <span style="color:var(--paper);">${fmtIdx(q.price)}</span>`
+                  + (chg != null ? ` <span class="${chg >= 0 ? 'up' : 'down'}" style="color:${chg >= 0 ? 'var(--green)' : 'var(--red)'};">${chgArrow(chg)}</span>` : '') : '');
+              })()} · ${d.currency}</div>
             </div>
             <div class="pr">
               ${chgHtml}
@@ -13125,11 +13125,18 @@ PELICAN-9
       }
 
       html += SECTION('STOCK INDICES');
-      html += d.indices.map(name => `
+      html += d.indices.map(name => {
+        const { sym, q, chg } = idxLiveFor(country, name);
+        const pr = q
+          ? `<div style="font-weight:700;color:var(--paper);font-variant-numeric:tabular-nums;">${fmtIdx(q.price)}</div>`
+            + (chg != null ? `<div class="chg ${chg >= 0 ? 'up' : 'down'}">${chgArrow(chg)}</div>` : '')
+          : `<div class="chg" style="font-size:9px;color:var(--dim);">${sym && API_PROXY ? 'loading…' : 'no live price'}</div>`;
+        return `
         <div class="market-row">
-          <div class="nm"><b>${escapeHtml(name)}</b><div class="sub">${d.currency} · denominated</div></div>
-          <div class="pr"><div class="chg" style="font-size:9px;color:var(--dim);">no live price</div></div>
-        </div>`).join('');
+          <div class="nm"><b>${escapeHtml(name)}</b><div class="sub">${escapeHtml(q?.currency || d.currency)} · ${q ? 'day change' : 'denominated'}</div></div>
+          <div class="pr">${pr}</div>
+        </div>`;
+      }).join('');
 
       html += SECTION('TOP LISTED COMPANIES');
       html += d.companies.map((name, i) => `
@@ -13264,39 +13271,6 @@ PELICAN-9
       tickerTrackEl.innerHTML = segment + segment;
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  BIG-MOVE ALERTS
-    // ════════════════════════════════════════════════════════════════
-    const alertsEl = document.getElementById('alerts');
-    function emitMoveAlert(coin, chg) {
-      // Crypto move toasts only fire on the MARKETS tab
-      if (state.tab !== 'markets') return;
-      const sym = coin.symbol?.toUpperCase();
-      const last = state.lastAlertedSym.get(sym) || 0;
-      // Only re-alert same coin every 10 minutes
-      if (Date.now() - last < 10 * 60 * 1000) return;
-      state.lastAlertedSym.set(sym, Date.now());
-
-      // Find related news by keyword
-      const related = findRelatedNews(sym).slice(0, 1);
-      const reason = related.length
-        ? `linked to "${escapeHtml((related[0].title || '').slice(0, 80))}"`
-        : 'no GDELT keyword match yet';
-
-      const up = chg >= 0;
-      const el = document.createElement('div');
-      el.className = 'alert ' + (up ? 'up' : 'down');
-      el.innerHTML = `
-        <div class="hdr"><img src="${escapeHtml(coin.image)}" alt=""/><b>${escapeHtml(sym)}</b><span>${escapeHtml(coin.name)}</span></div>
-        <div class="move ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(chg).toFixed(2)}% · $${fmtPrice(coin.current_price)}</div>
-        <div class="why">${reason}</div>`;
-      alertsEl.prepend(el);
-      requestAnimationFrame(() => el.classList.add('on'));
-      setTimeout(() => {
-        el.classList.remove('on');
-        setTimeout(() => el.remove(), 300);
-      }, 9000);
-    }
 
     function findRelatedNews(sym) {
       const wants = new Set();
@@ -13660,7 +13634,9 @@ PELICAN-9
           const chg = fx?.change != null
             ? ` · <b style="color:${fx.change>=0?'var(--green)':'var(--red)'}">${fx.change>=0?'▲':'▼'} ${Math.abs(fx.change).toFixed(2)}% / 7d</b>`
             : '';
-          tipMeta.innerHTML = `${escapeHtml(data.indices[0])} · ${d.currency}${chg}`;
+          const il = idxLiveFor(d.country, data.indices[0]);
+          const idxTxt = il.q ? ` ${fmtIdx(il.q.price)}${il.chg != null ? ` <b style="color:${il.chg>=0?'var(--green)':'var(--red)'}">${chgArrow(il.chg)}</b>` : ''}` : '';
+          tipMeta.innerHTML = `${escapeHtml(data.indices[0])}${idxTxt} · ${d.currency}${chg}`;
           tipEl.classList.add('on');
         } else if (d.kind === 'outbreakMarker') {
           const sev = OUTBREAK_SEVERITY[d.outbreak.severity];
@@ -18202,6 +18178,10 @@ PELICAN-9
           if (state.tab === 'markets' && state.mktView === 'impact') loadDeskFeed('biz', true).then(renderImpactDesk);
         }, 5 * 60 * 1000);
         _catchUp.push(() => { if (Date.now() - lastNewsRefresh > NEWS_EVERY) newsTick(); });
+        // Live index levels on the MARKETS globe, every minute while it is open.
+        everyVisible(() => {
+          if (state.tab === 'markets' && (state.mktView || 'globe') === 'globe') loadIndexQuotes();
+        }, IDX_LIVE_EVERY, { catchUp: true });
 
         renderCountryList();
         renderConflictTypeList();

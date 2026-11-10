@@ -257,7 +257,7 @@ async function handleQuotes(reqUrl, ctx) {
     try {
       const q = await fetchQuote(sym, range, interval);
       ctx.waitUntil(cache.put(key, new Response(JSON.stringify(q), {
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${long ? 43200 : 300}` },
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${long ? 43200 : range === '1d' ? 60 : 300}` },
       })));
       return q;
     } catch (e) {
