@@ -714,6 +714,48 @@
   .tip .name { font-weight: 600; font-size: 12px; }
   .tip .meta { margin-top: 5px; opacity: 0.65; font-size: 10px; letter-spacing: 0.06em; }
 
+  /* ============== ORBIT → SOLAR SYSTEM ============== */
+  #orbitSwitch { position: fixed; top: calc(var(--top-h, 64px) + 6px); left: 50%; transform: translateX(-50%); z-index: 12; display: none;
+    padding: 3px; background: rgba(5,11,24,0.85); backdrop-filter: blur(6px); }
+  body.orbit-tab #orbitSwitch { display: flex; }
+  #orbitSwitch button.on { color: var(--ink); }
+  body.solar-mode .left-rail, body.solar-mode #rotToggle, body.solar-mode .legend, body.solar-mode .view-toggle { display: none !important; }
+  body.solar-mode #app { display: block !important; }
+  body.solar-mode #mapLeaflet, body.solar-mode #mapCanvas { display: none !important; }
+  .solar-labels { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity .6s; }
+  .solar-labels.on { opacity: 1; }
+  .solar-labels.intro { opacity: 0; }
+  .sol-label { position: absolute; left: 0; top: 0; margin: 10px 0 0 10px; font-size: 10px; letter-spacing: 0.16em; color: var(--paper);
+    text-shadow: 0 0 4px #02060e, 0 0 8px #02060e; white-space: nowrap; pointer-events: auto; cursor: pointer; opacity: 0.8; }
+  .sol-label:hover, .sol-label.on { opacity: 1; color: var(--cyan); }
+  .sol-label.sun { color: var(--yellow); font-weight: 700; }
+  .sol-label.dwarf, .sol-label.moon { font-size: 9px; color: var(--dim); }
+  .sol-label.au { font-size: 9px; color: var(--cyan); opacity: 0.4; pointer-events: none; margin: -6px 0 0 4px; }
+  .solar-fade { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: var(--ink); opacity: 0; transition: opacity .38s ease-in; }
+  .solar-fade.on { opacity: 1; }
+  .sol-time { padding: 10px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .sol-date { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--paper); font-variant-numeric: tabular-nums; }
+  .sol-date #solRate { font-size: 9px; letter-spacing: 0.14em; color: var(--dim); }
+  .sol-date #solRate.live { color: var(--green); }
+  .sol-ctl { display: flex; gap: 4px; align-items: center; }
+  .sol-ctl button { flex: 1; padding: 5px 0; font-size: 10px; letter-spacing: 0.1em; border: 1px solid var(--line2); color: var(--dim); }
+  .sol-ctl button:hover { color: var(--paper); border-color: var(--cyan); }
+  .sol-ctl button.on, .sol-ctl button.live { color: var(--paper); }
+  .sol-ctl button.on { background: rgba(0,240,255,0.15); border-color: var(--cyan); }
+  .sol-ctl.scale span { font-size: 9px; letter-spacing: 0.14em; color: var(--dim); margin-right: 4px; }
+  .sol-head { display: grid; grid-template-columns: 1fr auto; padding: 8px 12px 4px; font-size: 9px; letter-spacing: 0.14em; color: var(--dim); }
+  .sol-head span:nth-child(3) { display: none; }
+  .sol-row { display: grid; grid-template-columns: 12px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; width: 100%; text-align: left;
+    padding: 7px 12px; border-bottom: 1px solid rgba(0,240,255,0.06); font-size: 11px; }
+  .sol-row:hover, .sol-row.on { background: rgba(0,240,255,0.07); }
+  .sol-row .dot { grid-row: 1 / 3; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+  .sol-row .nm { letter-spacing: 0.12em; color: var(--paper); }
+  .sol-row .nm i { font-style: normal; font-size: 9px; color: var(--dim); letter-spacing: 0.06em; }
+  .sol-row .v { text-align: right; color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .sol-row .v.sub { grid-column: 2 / 4; text-align: left; color: var(--dim); font-size: 10px; margin-top: 2px; }
+  .sol-moon { padding: 10px 12px; font-size: 10px; color: var(--dim); border-bottom: 1px solid var(--line); } .sol-moon b { color: var(--paper); letter-spacing: 0.12em; }
+  .sol-note { padding: 10px 12px; font-size: 9px; line-height: 1.5; color: var(--dim); opacity: 0.8; }
+
   /* ============== MARKETS sub-navigation + LONG TERM ============== */
   .mkt-nav { position: fixed; top: calc(var(--top-h, 64px) + 4px); left: 50%; transform: translateX(-50%); z-index: 12; display: none;
     gap: 2px; padding: 2px; border: 1px solid var(--line2); background: rgba(5,11,24,0.94); backdrop-filter: blur(6px); }
@@ -932,7 +974,7 @@
 
   /* ============== DESKS (POLITICS · IMPACT) ============== */
   .desk-stage {
-    position: fixed; inset: 78px 0 96px 0; z-index: 6; display: none; overflow-y: auto;
+    position: fixed; inset: 78px 0 0 0; z-index: 6; display: none; overflow-y: auto;
     padding: 0 48px 40px; user-select: text;
     background: linear-gradient(to bottom, rgba(2,6,14,0.9), rgba(2,6,14,0.97));
   }
@@ -1105,7 +1147,7 @@
 
   /* ============== THE LINE ============== */
   .line-stage {
-    position: fixed; inset: 78px 0 96px 0; z-index: 6;
+    position: fixed; inset: 78px 0 0 0; z-index: 6;
     display: none;
     overflow-y: auto;
     padding: 14px 60px 40px;
@@ -1120,6 +1162,8 @@
   body.line-mode #mapCanvas,
   body.line-mode .overlay { display: none !important; }
   body.line-mode .readout { display: none; }
+  /* Desks and THE LINE hide the whole footer, so the page runs to the bottom edge. */
+  body.desk-mode .bottom, body.line-mode .bottom { display: none; }
 
   .line-head {
     position: sticky; top: 0;
@@ -1704,6 +1748,8 @@
     /* ---- Ticker and Markets sub-navigation ---- */
     .ticker { top: var(--top-h, 90px); }
     .mkt-nav { top: calc(var(--top-h, 90px) + 4px); left: 6px; right: 6px; scrollbar-width: none; }
+    #orbitSwitch { top: calc(var(--top-h, 90px) + 4px); }
+    #orbitSwitch button { padding: 7px 10px; font-size: 10px; white-space: nowrap; letter-spacing: 0.1em; }
     .mkt-nav::-webkit-scrollbar { display: none; }
     .mkt-nav button { padding: 8px 10px; flex: none; }
     body.mkt-tab.has-ticker .mkt-nav { top: calc(var(--top-h, 90px) + 31px); }
@@ -1992,6 +2038,12 @@
     <section class="pol-trend" id="polTrend" aria-label="Voting trends"></section>
     <div id="polBody"></div>
   </div>
+  <nav class="orbit-switch pol-switch" id="orbitSwitch" role="tablist" aria-label="Orbit views">
+    <button data-om="earth" class="on" role="tab" aria-selected="true" style="--pc:var(--cyan)">EARTH ORBIT</button>
+    <button data-om="solar" role="tab" aria-selected="false" style="--pc:var(--yellow)">SOLAR SYSTEM</button>
+  </nav>
+  <div class="solar-labels" id="solarLabels" aria-hidden="true"></div>
+  <div class="solar-fade" id="solarFade"></div>
   <nav class="mkt-nav" id="mktNav" aria-label="Markets views">
     <button data-mv="globe">WORLD · LIVE</button>
     <button data-mv="country">SEARCH</button>
@@ -11376,7 +11428,7 @@ PELICAN-9
         const p = latLonToVec3(j.latitude, j.longitude, ISS_R);
         issDot.position.copy(p);
         pushTrail(p);
-        if (state.tab === 'orbit') renderTelemetry();
+        if (state.tab === 'orbit' && !SOL?.active) renderTelemetry();
       } catch (err) {
         console.warn('ISS poll failed', err);
       }
@@ -12815,6 +12867,7 @@ PELICAN-9
         </div>`;
     }
     function renderFeedOrbit() {
+      if (SOL?.active) return SOL.renderPanel();
       rightTitle.innerHTML = 'ISS <b>// TELEMETRY</b>';
       rightSub.textContent = 'wheretheiss.at';
       renderTelemetry();
@@ -13337,6 +13390,8 @@ PELICAN-9
       const isDesk = name === 'politics' || (mv && mv !== 'globe');
       document.body.classList.toggle('desk-mode', !!isDesk);
       document.body.classList.toggle('mkt-tab', name === 'markets');
+      document.body.classList.toggle('orbit-tab', name === 'orbit');
+      if (name !== 'orbit' && (SOL?.active || SOL?.busy)) SOL.exit(true);
       document.getElementById('politicsStage').classList.toggle('on', name === 'politics');
       document.getElementById('impactStage').classList.toggle('on', mv === 'impact');
       document.getElementById('longStage').classList.toggle('on', mv === 'long');
@@ -13431,7 +13486,11 @@ PELICAN-9
         countEl.textContent = String(total).padStart(3, '0');
         countLabel.innerHTML = `HAZARDS · ${state.quakes.length} SEISMIC · ${state.disasters.length} EVENTS`;
       } else if (state.tab === 'orbit') {
-        if (satellites.length) {
+        const so = SOL?.active && SOL.readout();
+        if (so) {
+          countEl.textContent = so.count;
+          countLabel.innerHTML = so.label;
+        } else if (satellites.length) {
           countEl.textContent = String(satellites.length);
           countLabel.innerHTML = `SATELLITES · ${state.ownerCounts.size} OWNERS`;
         } else {
@@ -13653,6 +13712,7 @@ PELICAN-9
       TAP_OFFSETS.push([Math.round(r * Math.cos(i * Math.PI / 4)), Math.round(r * Math.sin(i * Math.PI / 4))]);
     }
     renderer.domElement.addEventListener('click', (e) => {
+      if (SOL?.active) return;
       raycaster.params.Points = { threshold: 0.025 };
       // A fingertip is far wider than a dot: on touch, also try around the tap.
       const interactive = currentInteractive();
@@ -14500,6 +14560,588 @@ PELICAN-9
     });
 
     // ════════════════════════════════════════════════════════════════
+    //  SOLAR SYSTEM (ORBIT → SOLAR SYSTEM view)
+    //  Real heliocentric positions from JPL's Keplerian elements
+    //  (Standish, "Approximate Positions of the Planets", valid 1800–2050,
+    //  J2000 ecliptic). Angles are exact; only the radial distance is
+    //  compressed (√r) by default so the inner planets stay readable.
+    //  Body sizes are not to scale.
+    // ════════════════════════════════════════════════════════════════
+    // `var`: setTab() runs before this block and checks SOL.
+    var SOL = null;
+    {
+      const D2R = Math.PI / 180;
+      // a [AU], e, I, L, ϖ (long. perihelion), Ω (long. node) [deg], then rates per Julian century
+      const ELEMENTS = {
+        mercury: [0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593,
+                  0.00000037, 0.00001906, -0.00594749, 149472.67411175, 0.16047689, -0.12534081],
+        venus:   [0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255,
+                  0.00000390, -0.00004107, -0.00078890, 58517.81538729, 0.00268329, -0.27769418],
+        earth:   [1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0,
+                  0.00000562, -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0],
+        mars:    [1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891,
+                  0.00001847, 0.00007882, -0.00813131, 19140.30268499, 0.44441088, -0.29257343],
+        jupiter: [5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909,
+                  -0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106],
+        saturn:  [9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448,
+                  -0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794],
+        uranus:  [19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503,
+                  -0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589],
+        neptune: [30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574,
+                  0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.01262724],
+        pluto:   [39.48211675, 0.24882730, 17.14001206, 238.92903833, 224.06891629, 110.30393684,
+                  -0.00031596, 0.00005170, 0.00004818, 145.20780515, -0.04062942, -0.01183482],
+      };
+      const BODIES = [
+        { id: 'mercury', name: 'MERCURY', color: 0xa8a29a, size: 0.22 },
+        { id: 'venus',   name: 'VENUS',   color: 0xe8cfa0, size: 0.36 },
+        { id: 'earth',   name: 'EARTH',   color: 0x3d8bff, size: 0.38 },
+        { id: 'mars',    name: 'MARS',    color: 0xe0643c, size: 0.28 },
+        { id: 'jupiter', name: 'JUPITER', color: 0xd9b38a, size: 0.95 },
+        { id: 'saturn',  name: 'SATURN',  color: 0xe6d29a, size: 0.80 },
+        { id: 'uranus',  name: 'URANUS',  color: 0x8fe3e8, size: 0.55 },
+        { id: 'neptune', name: 'NEPTUNE', color: 0x5577ff, size: 0.53 },
+        { id: 'pluto',   name: 'PLUTO',   color: 0xc9b49a, size: 0.14, dwarf: true },
+      ];
+      const AU_KM = 149597870.7, LIGHT_MIN_PER_AU = 499.004784 / 60;
+      const MIN_T = Date.UTC(1800, 0, 1), MAX_T = Date.UTC(2050, 0, 1);
+      const UNIT = 10;   // scene units per AU at 1 AU
+
+      const centuries = (ms) => (ms / 86400000 + 2440587.5 - 2451545.0) / 36525;
+      // Heliocentric ecliptic (J2000) position in AU, plus the orbit-plane terms.
+      function elems(id, T) {
+        const k = ELEMENTS[id];
+        return { a: k[0] + k[6] * T, e: k[1] + k[7] * T, I: (k[2] + k[8] * T) * D2R,
+                 L: k[3] + k[9] * T, wb: k[4] + k[10] * T, O: (k[5] + k[11] * T) * D2R };
+      }
+      function eclXYZ(el, E) {
+        const w = el.wb * D2R - el.O;
+        const xp = el.a * (Math.cos(E) - el.e), yp = el.a * Math.sqrt(1 - el.e * el.e) * Math.sin(E);
+        const cw = Math.cos(w), sw = Math.sin(w), cO = Math.cos(el.O), sO = Math.sin(el.O), cI = Math.cos(el.I), sI = Math.sin(el.I);
+        return [
+          (cw * cO - sw * sO * cI) * xp + (-sw * cO - cw * sO * cI) * yp,
+          (cw * sO + sw * cO * cI) * xp + (-sw * sO + cw * cO * cI) * yp,
+          (sw * sI) * xp + (cw * sI) * yp,
+        ];
+      }
+      function helio(id, ms) {
+        const el = elems(id, centuries(ms));
+        let M = ((el.L - el.wb) % 360 + 540) % 360 - 180;   // mean anomaly in [-180, 180)
+        M *= D2R;
+        let E = M + el.e * Math.sin(M);
+        for (let i = 0; i < 8; i++) E -= (E - el.e * Math.sin(E) - M) / (1 - el.e * Math.cos(E));
+        return eclXYZ(el, E);
+      }
+      // Geocentric Moon (low-precision series, ~0.3° in longitude): ecliptic λ, β in degrees.
+      function moonEcl(ms) {
+        const T = centuries(ms), s = (d) => Math.sin(d * D2R);
+        const lam = 218.32 + 481267.881 * T + 6.29 * s(135.0 + 477198.87 * T) - 1.27 * s(259.3 - 413335.36 * T)
+          + 0.66 * s(235.7 + 890534.22 * T) + 0.21 * s(269.9 + 954397.74 * T) - 0.19 * s(357.5 + 35999.05 * T)
+          - 0.11 * s(186.5 + 966404.03 * T);
+        const bet = 5.13 * s(93.3 + 483202.02 * T) + 0.28 * s(228.2 + 960400.89 * T)
+          - 0.28 * s(318.3 + 6003.15 * T) - 0.17 * s(217.6 - 407332.21 * T);
+        return { lam: ((lam % 360) + 360) % 360, bet };
+      }
+      // Ecliptic (x, y, z) → scene: ecliptic north is +Y, prograde motion is counter-clockwise seen from above.
+      const sol = SOL = {
+        active: false, busy: false, scaleMode: 'sqrt', t: Date.now(), live: true, rate: 0,
+        focus: null, hoverId: null,
+      };
+      function toScene(x, y, z, out = new THREE.Vector3()) {
+        const r = Math.hypot(x, y, z) || 1e-9;
+        const k = sol.scaleMode === 'sqrt' ? UNIT * Math.sqrt(r) / r : UNIT;
+        return out.set(x * k, z * k, -y * k);
+      }
+
+      const sScene = new THREE.Scene();
+      const sCam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 8000);
+      const sControls = new OrbitControls(sCam, renderer.domElement);
+      sControls.enabled = false;
+      sControls.enableDamping = true;
+      sControls.dampingFactor = 0.08;
+      sControls.minDistance = 0.6;
+      sControls.maxDistance = 1400;
+      sControls.zoomSpeed = 1.4;
+
+      sScene.add(new THREE.AmbientLight(0x6688aa, 0.32));
+      const sunLight = new THREE.PointLight(0xfff2d8, 2.6, 0, 0);
+      sScene.add(sunLight);
+
+      // Background stars (fixed, far away)
+      {
+        const n = 2200, pos = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+          const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = 3000;
+          const q = Math.sqrt(1 - u * u);
+          pos.set([r * q * Math.cos(th), r * u, r * q * Math.sin(th)], i * 3);
+        }
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        sScene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x9fc4e8, size: 1.3, sizeAttenuation: false, transparent: true, opacity: 0.7 })));
+      }
+
+      // Sun + glow
+      const glowTex = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+        gr.addColorStop(0, 'rgba(255,240,200,1)'); gr.addColorStop(0.18, 'rgba(255,200,90,0.75)');
+        gr.addColorStop(0.45, 'rgba(255,140,40,0.18)'); gr.addColorStop(1, 'rgba(255,120,30,0)');
+        x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+        return new THREE.CanvasTexture(c);
+      })();
+      const sun = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), new THREE.MeshBasicMaterial({ color: 0xffd36a }));
+      sun.userData = { solarId: 'sun', base: 1.5 };
+      const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      sScene.add(sun, sunGlow);
+
+      const sphereGeo = new THREE.SphereGeometry(1, 40, 28);
+      const meshes = {}, orbitLines = {}, labels = {};
+      const labelLayer = document.getElementById('solarLabels');
+      function makeLabel(id, text, cls = '') {
+        const el = document.createElement('div');
+        el.className = 'sol-label ' + cls; el.textContent = text; el.dataset.sid = id;
+        labelLayer.appendChild(el); labels[id] = el; return el;
+      }
+      makeLabel('sun', 'SUN', 'sun');
+      for (const b of BODIES) {
+        const m = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.9, metalness: 0, emissive: b.color, emissiveIntensity: 0.06 }));
+        m.userData = { solarId: b.id, base: b.size };
+        sScene.add(m); meshes[b.id] = m;
+        makeLabel(b.id, b.name, b.dwarf ? 'dwarf' : '');
+      }
+      // Earth: a thin cyan atmosphere shell so it reads as "home" in the holo style
+      {
+        const atmo = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.18, side: THREE.BackSide }));
+        atmo.scale.setScalar(1.25);
+        meshes.earth.add(atmo);
+      }
+      // Saturn's rings, tilted to the real ring-pole direction (ecliptic λ 79.6°, β 62.0°)
+      {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(1.35, 2.35, 96),
+          new THREE.MeshBasicMaterial({ color: 0xd9c38f, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
+        const lam = 79.6 * D2R, bet = 62.0 * D2R;
+        const pole = new THREE.Vector3(Math.cos(bet) * Math.cos(lam), Math.sin(bet), -Math.cos(bet) * Math.sin(lam));
+        ring.lookAt(pole);
+        meshes.saturn.add(ring);
+      }
+      const moon = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({ color: 0xbfbfbf, roughness: 1 }));
+      moon.userData = { solarId: 'moon', base: 0.1 };
+      sScene.add(moon);
+      makeLabel('moon', 'MOON', 'moon');
+
+      // Asteroid belt (a statistical cloud between 2.2 and 3.3 AU, not individual objects)
+      const beltAU = [];
+      for (let i = 0; i < 1600; i++) {
+        const r = 2.2 + Math.random() * 1.1, th = Math.random() * Math.PI * 2, z = (Math.random() - 0.5) * 0.25 * r;
+        beltAU.push(r * Math.cos(th), r * Math.sin(th), z);
+      }
+      const belt = new THREE.Points(new THREE.BufferGeometry(),
+        new THREE.PointsMaterial({ color: 0x8a7d6a, size: 1.4, sizeAttenuation: false, transparent: true, opacity: 0.55 }));
+      sScene.add(belt);
+
+      // Distance rings on the ecliptic + the vernal-equinox direction (λ = 0°)
+      const grid = new THREE.Group(); sScene.add(grid);
+      const RINGS_AU = [1, 5, 10, 20, 30, 40];
+      for (const au of RINGS_AU) makeLabel('au' + au, au + ' AU', 'au');
+      makeLabel('gamma', '♈ λ 0°', 'au');
+
+      function buildStatic() {
+        // Orbits: sampled over eccentric anomaly at the current epoch, mapped point by point.
+        const T = centuries(sol.t), v = new THREE.Vector3();
+        for (const b of BODIES) {
+          const el = elems(b.id, T), pts = [];
+          for (let i = 0; i <= 360; i++) {
+            const p = eclXYZ(el, (i / 360) * Math.PI * 2);
+            pts.push(toScene(p[0], p[1], p[2], v).clone());
+          }
+          orbitLines[b.id]?.geometry.dispose();
+          if (!orbitLines[b.id]) {
+            orbitLines[b.id] = new THREE.Line(new THREE.BufferGeometry(),
+              new THREE.LineBasicMaterial({ color: b.color, transparent: true, opacity: 0.32 }));
+            sScene.add(orbitLines[b.id]);
+          }
+          orbitLines[b.id].geometry = new THREE.BufferGeometry().setFromPoints(pts);
+        }
+        const bp = new Float32Array(beltAU.length);
+        for (let i = 0; i < beltAU.length; i += 3) { toScene(beltAU[i], beltAU[i + 1], beltAU[i + 2], v); bp.set([v.x, v.y, v.z], i); }
+        belt.geometry.dispose();
+        belt.geometry = new THREE.BufferGeometry(); belt.geometry.setAttribute('position', new THREE.BufferAttribute(bp, 3));
+        for (const c of [...grid.children]) { c.geometry.dispose(); grid.remove(c); }
+        const gm = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.09 });
+        for (const au of RINGS_AU) {
+          const pts = [];
+          for (let i = 0; i <= 180; i++) { const a = i / 180 * Math.PI * 2; pts.push(toScene(au * Math.cos(a), au * Math.sin(a), 0, v).clone()); }
+          grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gm));
+        }
+        grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), toScene(40, 0, 0, v).clone()]),
+          new THREE.LineDashedMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.22, dashSize: 0.6, gapSize: 0.6 })));
+        grid.children.at(-1).computeLineDistances();
+      }
+
+      // ── State per frame
+      const pos = {};   // id → THREE.Vector3 (scene), AU positions in posAU
+      const posAU = {};
+      let moonInfo = null;
+      function updatePositions() {
+        for (const b of BODIES) {
+          const p = helio(b.id, sol.t);
+          posAU[b.id] = p;
+          pos[b.id] = toScene(p[0], p[1], p[2], pos[b.id] || new THREE.Vector3());
+          meshes[b.id].position.copy(pos[b.id]);
+        }
+        // Moon phase from the Sun–Moon elongation as seen from Earth
+        const m = moonEcl(sol.t), e = posAU.earth;
+        const sunLam = Math.atan2(-e[1], -e[0]) / D2R;
+        const elong = ((m.lam - sunLam) % 360 + 360) % 360;
+        const illum = (1 - Math.cos(elong * D2R)) / 2;
+        const names = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
+        moonInfo = { ...m, illum, phase: names[Math.round(elong / 45) % 8] };
+      }
+      const pxScale = (d) => d * Math.tan(sCam.fov * D2R / 2) * 2 / innerHeight;   // world units per screen px at distance d
+      function updateSizes() {
+        const cp = sCam.position;
+        const sd = cp.length();
+        sun.scale.setScalar(Math.max(1.5, pxScale(sd) * 9));
+        sunGlow.scale.setScalar(sun.scale.x * 7);
+        for (const b of BODIES) {
+          const d = cp.distanceTo(pos[b.id]);
+          meshes[b.id].scale.setScalar(Math.max(b.size, pxScale(d) * (b.dwarf ? 2.5 : 3 + b.size * 3)));
+        }
+        // Moon: real direction, distance exaggerated so it clears Earth's (inflated) disc
+        const es = meshes.earth.scale.x, lam = moonInfo.lam * D2R, bet = moonInfo.bet * D2R;
+        const off = es * 3.2;
+        moon.position.set(pos.earth.x + off * Math.cos(bet) * Math.cos(lam), pos.earth.y + off * Math.sin(bet), pos.earth.z - off * Math.cos(bet) * Math.sin(lam));
+        moon.scale.setScalar(es * 0.27);
+      }
+      const tmpV = new THREE.Vector3();
+      function placeLabel(el, v, show = true, dy = 0) {
+        tmpV.copy(v).project(sCam);
+        if (!show || tmpV.z > 1 || tmpV.z < -1) { el.style.display = 'none'; return; }
+        el.style.display = '';
+        el.style.transform = `translate(${((tmpV.x + 1) / 2 * innerWidth).toFixed(1)}px, ${((1 - tmpV.y) / 2 * innerHeight + dy).toFixed(1)}px)`;
+      }
+      function updateLabels() {
+        const cd = sCam.position.length();
+        // Drop each label just below the body's disc, however big it is on screen.
+        const rPx = (o) => Math.min(innerHeight / 3, o.scale.x / pxScale(Math.max(0.01, sCam.position.distanceTo(o.position))));
+        placeLabel(labels.sun, sun.position, true, rPx(sun) * 0.9);
+        for (const b of BODIES) {
+          placeLabel(labels[b.id], pos[b.id], true, rPx(meshes[b.id]) * 0.9);
+          labels[b.id].classList.toggle('on', sol.focus === b.id || sol.hoverId === b.id);
+        }
+        placeLabel(labels.moon, moon.position, sCam.position.distanceTo(pos.earth) < 18);
+        const v = new THREE.Vector3();
+        for (const au of RINGS_AU) placeLabel(labels['au' + au], toScene(au * Math.cos(-0.5), au * Math.sin(-0.5), 0, v), cd > 25 || au === 1);
+        placeLabel(labels.gamma, toScene(40, 0, 0, v), cd > 60);
+      }
+
+      // ── Panel (right rail)
+      const fmtDate = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const RATES = [-30, -7, -1, 0, 1, 7, 30];   // days per second
+      function lightTime(au) {
+        const m = au * LIGHT_MIN_PER_AU;
+        return m < 60 ? `${m.toFixed(1)} light-min` : `${(m / 60).toFixed(2)} light-h`;
+      }
+      function rowStats(id) {
+        const p = posAU[id], e = posAU.earth;
+        const r = Math.hypot(...p);
+        const lam = ((Math.atan2(p[1], p[0]) / D2R) + 360) % 360;
+        const de = id === 'earth' ? null : Math.hypot(p[0] - e[0], p[1] - e[1], p[2] - e[2]);
+        return { r, lam, de };
+      }
+      function renderSolarPanel() {
+        rightTitle.innerHTML = 'SOLAR SYSTEM <b>// LIVE</b>';
+        rightSub.textContent = 'JPL Keplerian elements';
+        const rows = BODIES.map(b => `
+          <button class="sol-row" data-sid="${b.id}" style="--c:#${b.color.toString(16).padStart(6, '0')}">
+            <span class="dot"></span><span class="nm">${b.name}${b.dwarf ? ' <i>dwarf</i>' : ''}</span>
+            <span class="v" data-k="r"></span><span class="v sub" data-k="de"></span>
+          </button>`).join('');
+        feedListEl.innerHTML = `
+          <div class="sol-time">
+            <div class="sol-date"><span id="solDate"></span><span id="solRate"></span></div>
+            <div class="sol-ctl">
+              <button data-sc="slower" title="Faster backwards">◀◀</button>
+              <button data-sc="pause" title="Pause / play">❚❚</button>
+              <button data-sc="faster" title="Faster forwards">▶▶</button>
+              <button data-sc="live" class="live">NOW</button>
+            </div>
+            <div class="sol-ctl scale">
+              <span>DISTANCES</span>
+              <button data-scale="sqrt">COMPRESSED</button><button data-scale="linear">TRUE SCALE</button>
+            </div>
+          </div>
+          <div class="sol-head"><span>BODY</span><span>FROM SUN</span><span>FROM EARTH</span></div>
+          <button class="sol-row" data-sid="sun" style="--c:#ffd36a"><span class="dot"></span><span class="nm">SUN</span><span class="v" data-k="r">—</span><span class="v sub" data-k="de"></span></button>
+          ${rows}
+          <div class="sol-moon" id="solMoon"></div>
+          <div class="sol-note">Directions are real for the date shown. Planet sizes are not to scale; in COMPRESSED mode distances follow √AU. Moon distance is exaggerated.</div>`;
+        updateSolarPanel(true);
+      }
+      function updateSolarPanel(full) {
+        if (!sol.active || state.tab !== 'orbit') return;
+        const dEl = document.getElementById('solDate'); if (!dEl) return;
+        const d = new Date(sol.t);
+        dEl.textContent = sol.live ? d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC' : fmtDate(sol.t);
+        document.getElementById('solRate').textContent = sol.live ? '● LIVE' : sol.rate ? `${sol.rate > 0 ? '+' : '−'}${Math.abs(sol.rate)} DAYS/S` : 'PAUSED';
+        document.getElementById('solRate').className = sol.live ? 'live' : '';
+        const pauseBtn = feedListEl.querySelector('[data-sc="pause"]');
+        if (pauseBtn) pauseBtn.textContent = sol.rate ? '❚❚' : '▶';
+        feedListEl.querySelectorAll('[data-scale]').forEach(b => b.classList.toggle('on', b.dataset.scale === sol.scaleMode));
+        for (const row of feedListEl.querySelectorAll('.sol-row')) {
+          const id = row.dataset.sid;
+          row.classList.toggle('on', sol.focus === id);
+          if (id === 'sun') { const e = posAU.earth; row.querySelector('[data-k="de"]').textContent = `${(Math.hypot(...e) * AU_KM / 1e6).toFixed(1)} M km`; continue; }
+          const s = rowStats(id);
+          row.querySelector('[data-k="r"]').textContent = `${s.r.toFixed(s.r < 10 ? 3 : 2)} AU`;
+          row.querySelector('[data-k="de"]').textContent = s.de == null ? 'you are here' : `${s.de.toFixed(s.de < 10 ? 3 : 2)} AU · ${lightTime(s.de)}`;
+        }
+        if (moonInfo) {
+          const pct = Math.round(moonInfo.illum * 100);
+          document.getElementById('solMoon').innerHTML = `<b>MOON</b> · ${moonInfo.phase} · ${pct}% lit · ecliptic λ ${moonInfo.lam.toFixed(1)}°`;
+        }
+        if (full !== false) updateCount();
+      }
+      feedListEl.addEventListener('click', (e) => {
+        if (!sol.active) return;
+        const row = e.target.closest('.sol-row');
+        if (row) return focusBody(row.dataset.sid);
+        const sc = e.target.closest('[data-sc]')?.dataset.sc;
+        if (sc) {
+          if (sc === 'live') { sol.live = true; sol.rate = 0; sol.t = Date.now(); }
+          else if (sc === 'pause') { sol.live = false; sol.rate = sol.rate ? 0 : 1; }
+          else {
+            sol.live = false;
+            const i = RATES.indexOf(sol.rate);
+            sol.rate = RATES[Math.max(0, Math.min(RATES.length - 1, i + (sc === 'faster' ? 1 : -1)))];
+          }
+          updateSolarPanel();
+          return;
+        }
+        const sm = e.target.closest('[data-scale]')?.dataset.scale;
+        if (sm && sm !== sol.scaleMode) {
+          sol.scaleMode = sm; buildStatic(); updatePositions(); updateSizes();
+          // Overview stays an overview, a focused body stays focused.
+          if (sol.focus) focusBody(sol.focus); else overview(1.2);
+          updateSolarPanel();
+        }
+      });
+      labelLayer.addEventListener('click', (e) => { const el = e.target.closest('[data-sid]'); if (el && labels[el.dataset.sid] === el && !/^au|gamma/.test(el.dataset.sid)) focusBody(el.dataset.sid); });
+
+      // ── Camera helpers
+      const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      let camTween = null;   // { from, to, fromT, toT, start, dur, done }
+      // Flies on a log-distance path so a 1000× zoom feels steady instead of all-at-the-end.
+      function flyTo(target, distance, dir, dur, done) {
+        const fromT = sControls.target.clone();
+        const off = sCam.position.clone().sub(fromT);
+        camTween = {
+          fromT, toT: target.clone(), fromDir: off.clone().normalize(), toDir: dir.clone().normalize(),
+          fromD: off.length(), toD: distance, start: performance.now(), dur: dur * 1000, done,
+        };
+      }
+      function stepCamTween(now) {
+        const c = camTween; if (!c) return;
+        const t = Math.min(1, (now - c.start) / c.dur), k = ease(t);
+        const tgt = c.fromT.clone().lerp(c.toT, k);
+        const dir = c.fromDir.clone().lerp(c.toDir, k).normalize();
+        const d = Math.exp(Math.log(c.fromD) + (Math.log(c.toD) - Math.log(c.fromD)) * k);
+        sControls.target.copy(tgt);
+        sCam.position.copy(tgt).addScaledVector(dir, d);
+        sCam.lookAt(tgt);
+        if (t >= 1) { camTween = null; c.done?.(); }
+      }
+      const posOf = (id) => id === 'sun' ? sun.position : id === 'moon' ? moon.position : pos[id];
+      const OVERVIEW_DIR = new THREE.Vector3(0.35, 0.78, 0.9);
+      const overviewDist = () => sol.scaleMode === 'sqrt' ? 135 : 820;
+      function focusBody(id) {
+        const p = posOf(id); if (!p) return;
+        sol.focus = id === 'sun' ? null : id;
+        const b = BODIES.find(x => x.id === id);
+        const d = id === 'sun' ? 22 : Math.max(3, (b?.size || 0.3) * 16);
+        const dir = sCam.position.clone().sub(sControls.target);
+        if (dir.y < dir.length() * 0.3) dir.y = dir.length() * 0.3;
+        flyTo(p, d, dir, 1.4);
+        updateSolarPanel(false);
+      }
+      function overview(dur = 1.4) { sol.focus = null; flyTo(new THREE.Vector3(), overviewDist(), OVERVIEW_DIR, dur); }
+
+      // ── Hover + click (solar scene only)
+      const sRay = new THREE.Raycaster();
+      const pickables = () => [sun, moon, ...BODIES.map(b => meshes[b.id])];
+      function pick(cx, cy) {
+        const m = new THREE.Vector2((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1);
+        sRay.setFromCamera(m, sCam);
+        let id = sRay.intersectObjects(pickables(), false)[0]?.object.userData.solarId || null;
+        if (!id) {   // small bodies far away: accept a click within ~14 px of the disc
+          let best = 14;
+          for (const o of pickables()) {
+            tmpV.copy(o.position).project(sCam); if (tmpV.z > 1) continue;
+            const dx = (tmpV.x + 1) / 2 * innerWidth - cx, dy = (1 - tmpV.y) / 2 * innerHeight - cy, dd = Math.hypot(dx, dy);
+            if (dd < best) { best = dd; id = o.userData.solarId; }
+          }
+        }
+        return id;
+      }
+      let downAt = null;
+      renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+      renderer.domElement.addEventListener('click', (e) => {
+        if (!sol.active || sol.busy) return;
+        if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;   // was a drag
+        const id = pick(e.clientX, e.clientY);
+        if (id) focusBody(id);
+      });
+      renderer.domElement.addEventListener('dblclick', () => { if (sol.active && !sol.busy) overview(); });
+      let hoverXY = null;
+      addEventListener('mousemove', (e) => { if (sol.active) hoverXY = [e.clientX, e.clientY]; });
+      function updateSolarHover() {
+        if (!hoverXY || sol.busy) return;
+        const id = pick(hoverXY[0], hoverXY[1]);
+        if (id === sol.hoverId) return;
+        sol.hoverId = id;
+        renderer.domElement.style.cursor = id ? 'pointer' : '';
+        if (!id) { tipEl.classList.remove('on'); return; }
+        const name = id === 'sun' ? 'SUN' : id === 'moon' ? 'MOON' : BODIES.find(b => b.id === id).name;
+        tipKicker.textContent = id === 'sun' ? 'STAR' : id === 'moon' ? 'NATURAL SATELLITE' : id === 'pluto' ? 'DWARF PLANET' : 'PLANET';
+        tipName.textContent = name;
+        if (id === 'sun') tipMeta.innerHTML = `Earth distance <b style="color:var(--paper)">${(Math.hypot(...posAU.earth) * AU_KM / 1e6).toFixed(2)} M km</b>`;
+        else if (id === 'moon') tipMeta.innerHTML = `${moonInfo.phase} · ${Math.round(moonInfo.illum * 100)}% lit`;
+        else {
+          const s = rowStats(id);
+          tipMeta.innerHTML = `<b style="color:var(--paper)">${s.r.toFixed(3)} AU</b> from the Sun` + (s.de != null ? ` · ${s.de.toFixed(3)} AU from Earth` : '') + `<br/>heliocentric λ ${s.lam.toFixed(1)}° · click to focus`;
+        }
+        tipEl.classList.add('on');
+      }
+
+      // ── Per-frame
+      let lastFrame = performance.now(), lastPanel = 0, lastLive = 0;
+      function frame(now) {
+        const dt = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now;
+        if (sol.live) { if (now - lastLive > 1000) { sol.t = Date.now(); lastLive = now; } }
+        else if (sol.rate) sol.t = Math.max(MIN_T, Math.min(MAX_T, sol.t + sol.rate * 86400000 * dt));
+        const prevFocus = sol.focus && posOf(sol.focus).clone();
+        updatePositions();
+        updateSizes();
+        // Follow the focused body as time moves it
+        if (prevFocus && !camTween) {
+          const d = posOf(sol.focus).clone().sub(prevFocus);
+          sCam.position.add(d); sControls.target.add(d);
+        }
+        if (camTween) stepCamTween(now); else sControls.update();
+        updateLabels();
+        updateSolarHover();
+        if (now - lastPanel > 400) { lastPanel = now; updateSolarPanel(); }
+        renderer.render(sScene, sCam);
+      }
+      function syncCam() {
+        sCam.aspect = innerWidth / innerHeight;
+        if (camera.view?.enabled) { const v = camera.view; sCam.setViewOffset(v.fullWidth, v.fullHeight, v.offsetX, v.offsetY, v.width, v.height); }
+        else {
+          // Desktop: centre the system in the space the right rail leaves free.
+          const r = document.querySelector('.right-rail').getBoundingClientRect();
+          const shift = r.width > 0 && r.left > innerWidth / 2 ? Math.round((innerWidth - r.left) / 2) : 0;
+          sCam.setViewOffset(innerWidth, innerHeight, shift, 0, innerWidth, innerHeight);
+        }
+        sCam.updateProjectionMatrix();
+      }
+      addEventListener('resize', syncCam);
+
+      // ── Transitions: "gain altitude" from the globe, and back down
+      const fadeEl = document.getElementById('solarFade');
+      const switchEl = document.getElementById('orbitSwitch');
+      function setSwitch(mode) {
+        switchEl.querySelectorAll('[data-om]').forEach(b => { const on = b.dataset.om === mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+      }
+      function applyMode(on) {
+        sol.active = on;
+        document.body.classList.toggle('solar-mode', on);
+        controls.enabled = !on;
+        sControls.enabled = on;
+        labelLayer.classList.toggle('on', on);
+        tipEl.classList.remove('on'); sol.hoverId = null; hoverXY = null;
+        renderer.domElement.style.cursor = '';
+      }
+      function tweenMain(toPos, dur, easing, done) {
+        const from = camera.position.clone(), start = performance.now(), id = transitionId;
+        (function step() {
+          if (id !== transitionId) return;
+          const t = Math.min(1, (performance.now() - start) / (dur * 1000));
+          camera.position.lerpVectors(from, toPos, easing(t)); camera.lookAt(0, 0, 0);
+          if (t < 1) requestAnimationFrame(step); else done?.();
+        })();
+      }
+      const easeIn = (t) => t * t * t;
+      let transitionId = 0;   // a newer transition (or leaving the tab) cancels a pending swap
+      function enterSolar() {
+        if (sol.active || sol.busy) return;
+        sol.busy = true; setSwitch('solar');
+        controls.autoRotate = false; controls.enabled = false;
+        tipEl.classList.remove('on');
+        // 1 · climb straight up away from the globe
+        const token = ++transitionId;
+        const out = camera.position.clone().setLength(28);
+        tweenMain(out, 1.15, easeIn);
+        setTimeout(() => { if (token === transitionId) fadeEl.classList.add('on'); }, 800);
+        setTimeout(() => {
+          if (token !== transitionId) return;
+          if (state.tab !== 'orbit') { sol.busy = false; fadeEl.classList.remove('on'); setSwitch('earth'); return; }
+          // 2 · swap to the solar scene, starting right above Earth, then pull out to the whole system
+          sol.t = sol.live ? Date.now() : sol.t;
+          buildStatic(); updatePositions(); syncCam();
+          const ep = pos.earth;
+          const dir = ep.clone().normalize().add(new THREE.Vector3(0, 0.45, 0)).normalize();
+          sControls.target.copy(ep);
+          sCam.position.copy(ep).addScaledVector(dir, 1.6);
+          sCam.lookAt(ep);
+          sol.focus = null;
+          applyMode(true);
+          renderSolarPanel();
+          fadeEl.classList.remove('on');
+          labelLayer.classList.add('intro');
+          flyTo(new THREE.Vector3(), overviewDist(), OVERVIEW_DIR, 3.2, () => { sol.busy = false; labelLayer.classList.remove('intro'); });
+        }, 1180);
+      }
+      function exitSolar(instant) {
+        if (!sol.active && !(instant && sol.busy)) return;
+        if (instant) {
+          transitionId++;
+          camTween = null; sol.busy = false; fadeEl.classList.remove('on'); labelLayer.classList.remove('intro');
+          applyMode(false); setSwitch('earth'); return;
+        }
+        if (sol.busy) return;
+        sol.busy = true; setSwitch('earth');
+        sol.focus = null;
+        // 1 · dive back down to Earth
+        const dir = pos.earth.clone().normalize().add(new THREE.Vector3(0, 0.45, 0));
+        flyTo(pos.earth, 1.6, dir, 2.0);
+        const token = ++transitionId;
+        setTimeout(() => { if (token === transitionId) fadeEl.classList.add('on'); }, 1600);
+        setTimeout(() => {
+          if (token !== transitionId) return;
+          // 2 · back on the globe, descending from high orbit
+          camTween = null;
+          applyMode(false);
+          fadeEl.classList.remove('on');
+          camera.position.copy(latLonToVec3(50, 10, 28));
+          camera.lookAt(0, 0, 0);
+          tweenMain(latLonToVec3(50, 10, 3.5), 1.4, (t) => 1 - Math.pow(1 - t, 3), () => { sol.busy = false; });
+          renderFeedOrbit(); updateCount();
+        }, 2050);
+      }
+      switchEl.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-om]'); if (!b) return;
+        if (b.dataset.om === 'solar') enterSolar(); else exitSolar();
+      });
+
+      sol.frame = frame;
+      sol.renderPanel = renderSolarPanel;
+      sol.exit = exitSolar;
+      sol.readout = () => {
+        const e = posAU.earth; if (!e) return null;
+        return { count: (Math.hypot(...e) * AU_KM / 1e6).toFixed(1), label: 'M KM · EARTH ↔ SUN' };
+      };
+    }
+
+    // ════════════════════════════════════════════════════════════════
     //  RESIZE + ANIMATE
     // ════════════════════════════════════════════════════════════════
     addEventListener('resize', () => {
@@ -15028,6 +15670,7 @@ PELICAN-9
 
     const clock = new THREE.Clock();
     function animate() {
+      if (SOL?.active) { SOL.frame(performance.now()); requestAnimationFrame(animate); return; }
       const t = clock.getElapsedTime();
       updateSignalDots(t);
       // Orbit and zoom gently near the surface; fetch the finer coastlines there.
