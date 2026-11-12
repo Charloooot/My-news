@@ -733,12 +733,17 @@
   .solar-labels.on { opacity: 1; }
   .solar-labels.intro { opacity: 0; }
   .solar-labels:not(.on) .sol-label, .solar-labels.intro .sol-label { pointer-events: none; }
-  .sol-label { position: absolute; left: 0; top: 0; margin: 10px 0 0 10px; font-size: 10px; letter-spacing: 0.16em; color: var(--paper);
-    text-shadow: 0 0 4px #02060e, 0 0 8px #02060e; white-space: nowrap; pointer-events: auto; cursor: pointer; opacity: 0.8; }
-  .sol-label:hover, .sol-label.on { opacity: 1; color: var(--cyan); }
-  .sol-label.sun { color: var(--yellow); font-weight: 700; }
+  /* HUD labels: underlined name + a 45° leader line down to the body */
+  .sol-label { position: absolute; left: 0; top: 0; padding: 0 2px 2px 0; font-size: 10px; letter-spacing: 0.16em; color: var(--paper);
+    border-bottom: 1px solid rgba(0,240,255,0.4); text-shadow: 0 0 4px #02060e, 0 0 8px #02060e; white-space: nowrap;
+    pointer-events: auto; cursor: pointer; opacity: 0.85; }
+  .sol-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .sol-leader { stroke: rgba(0,240,255,0.4); stroke-width: 1; }
+  .sol-leader.on { stroke: var(--cyan); }
+  .sol-leader.sun { stroke: rgba(255,216,74,0.5); }
+  .sol-label:hover, .sol-label.on { opacity: 1; color: var(--cyan); border-color: var(--cyan); }
+  .sol-label.sun { color: var(--yellow); font-weight: 700; border-color: rgba(255,216,74,0.5); }
   .sol-label.dwarf, .sol-label.moon { font-size: 9px; color: var(--dim); }
-  .sol-label.au { font-size: 9px; color: var(--cyan); opacity: 0.4; pointer-events: none; margin: -6px 0 0 4px; }
   .solar-fade { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: var(--ink); opacity: 0; transition: opacity .38s ease-in; }
   .solar-fade.on { opacity: 1; }
   .sol-time { padding: 10px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
@@ -14690,8 +14695,9 @@ PELICAN-9
       sControls.maxDistance = 1400;
       sControls.zoomSpeed = 1.4;
 
-      sScene.add(new THREE.AmbientLight(0x6688aa, 0.32));
-      const sunLight = new THREE.PointLight(0xfff2d8, 2.6, 0, 0);
+      // Low ambient: planets show a real day side and night side, lit by the Sun.
+      sScene.add(new THREE.AmbientLight(0x6688aa, 0.10));
+      const sunLight = new THREE.PointLight(0xfff2d8, 3.2, 0, 0);
       sScene.add(sunLight);
 
       // Background stars (fixed, far away)
@@ -14717,34 +14723,57 @@ PELICAN-9
       })();
       const sun = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), new THREE.MeshBasicMaterial({ color: 0xffd36a }));
       sun.userData = { solarId: 'sun', base: 1.5 };
-      const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-      sScene.add(sun, sunGlow);
+      const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.8 }));
+      // HUD reticle around the Sun, always facing the camera
+      const sunReticle = new THREE.Mesh(new THREE.RingGeometry(1, 1.04, 96),
+        new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.55, depthWrite: false }));
+      sScene.add(sun, sunGlow, sunReticle);
 
       const sphereGeo = new THREE.SphereGeometry(1, 40, 28);
+      // Holo rim: brightest where the surface turns away from the camera, so it reads as a thin glowing edge.
+      const rimMaterial = (color, strength = 1) => new THREE.ShaderMaterial({
+        uniforms: { uColor: { value: new THREE.Color(color) }, uK: { value: strength } },
+        vertexShader: `varying vec3 vN; varying vec3 vV;
+          void main() { vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+        fragmentShader: `uniform vec3 uColor; uniform float uK; varying vec3 vN; varying vec3 vV;
+          void main() { float f = pow(1.0 - max(dot(vN, vV), 0.0), 2.6) * uK; gl_FragColor = vec4(uColor * f, f); }`,
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      });
       const meshes = {}, orbitLines = {}, labels = {};
       const labelLayer = document.getElementById('solarLabels');
+      const leaderSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      leaderSvg.setAttribute('class', 'sol-leaders');
+      labelLayer.appendChild(leaderSvg);
+      const leaders = {};
       function makeLabel(id, text, cls = '') {
         const el = document.createElement('div');
         el.className = 'sol-label ' + cls; el.textContent = text; el.dataset.sid = id;
-        labelLayer.appendChild(el); labels[id] = el; return el;
+        labelLayer.appendChild(el); labels[id] = el;
+        const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        ln.setAttribute('class', 'sol-leader ' + cls); leaderSvg.appendChild(ln); leaders[id] = ln;
+        return el;
       }
       makeLabel('sun', 'SUN', 'sun');
       for (const b of BODIES) {
-        const m = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.9, metalness: 0, emissive: b.color, emissiveIntensity: 0.06 }));
+        const m = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.95, metalness: 0, emissive: b.color, emissiveIntensity: 0.04 }));
         m.userData = { solarId: b.id, base: b.size };
+        // Holo rim: a faint shell in the planet's colour, seen only around the edge
+        const rim = new THREE.Mesh(sphereGeo, b.id === 'earth' ? rimMaterial(0x00f0ff, 1.6) : rimMaterial(b.color, 0.9));
+        rim.scale.setScalar(1.05); m.add(rim);
         sScene.add(m); meshes[b.id] = m;
         makeLabel(b.id, b.name, b.dwarf ? 'dwarf' : '');
       }
       // Earth: a thin cyan atmosphere shell so it reads as "home" in the holo style
-      {
-        const atmo = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.18, side: THREE.BackSide }));
-        atmo.scale.setScalar(1.25);
-        meshes.earth.add(atmo);
-      }
+      // (Earth's rim above is cyan and stronger: it reads as an atmosphere and marks "home".)
       // Saturn's rings, tilted to the real ring-pole direction (ecliptic λ 79.6°, β 62.0°)
       {
-        const ring = new THREE.Mesh(new THREE.RingGeometry(1.35, 2.35, 96),
-          new THREE.MeshBasicMaterial({ color: 0xd9c38f, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
+        const rg = new THREE.RingGeometry(1.24, 2.27, 128, 1);
+        const rp = rg.attributes.position, ruv = rg.attributes.uv;
+        for (let i = 0; i < rp.count; i++) ruv.setXY(i, (Math.hypot(rp.getX(i), rp.getY(i)) - 1.24) / (2.27 - 1.24), 0.5);
+        const ring = new THREE.Mesh(rg,
+          new THREE.MeshBasicMaterial({ color: 0xd9c38f, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+        ring.userData.isRing = true;
         const lam = 79.6 * D2R, bet = 62.0 * D2R;
         const pole = new THREE.Vector3(Math.cos(bet) * Math.cos(lam), Math.sin(bet), -Math.cos(bet) * Math.sin(lam));
         ring.lookAt(pole);
@@ -14755,21 +14784,57 @@ PELICAN-9
       sScene.add(moon);
       makeLabel('moon', 'MOON', 'moon');
 
-      // Asteroid belt (a statistical cloud between 2.2 and 3.3 AU, not individual objects)
-      const beltAU = [];
-      for (let i = 0; i < 1600; i++) {
-        const r = 2.2 + Math.random() * 1.1, th = Math.random() * Math.PI * 2, z = (Math.random() - 0.5) * 0.25 * r;
-        beltAU.push(r * Math.cos(th), r * Math.sin(th), z);
+      // Planet maps (Solar System Scope, CC BY 4.0, from NASA data), fetched on the first visit only.
+      const TEX = { sun: 'sun', mercury: 'mercury', venus: 'venus_atmosphere', earth: 'earth_daymap', moon: 'moon',
+        mars: 'mars', jupiter: 'jupiter', saturn: 'saturn', uranus: 'uranus', neptune: 'neptune' };
+      let texturesLoaded = false;
+      function loadTextures() {
+        if (texturesLoaded) return; texturesLoaded = true;
+        const loader = new THREE.TextureLoader(), aniso = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+        const apply = (mat, file, extra) => loader.load(`assets/planets/${file}`, (tx) => {
+          tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = aniso;
+          mat.map = tx; mat.color.set(0xffffff); if (mat.emissive) mat.emissiveIntensity = 0.015;
+          Object.assign(mat, extra || {}); mat.needsUpdate = true;
+        }, undefined, (err) => console.warn('planet texture', file, err));
+        apply(sun.material, TEX.sun + '.jpg');
+        apply(moon.material, TEX.moon + '.jpg');
+        for (const b of BODIES) if (TEX[b.id]) apply(meshes[b.id].material, TEX[b.id] + '.jpg');
+        const ring = meshes.saturn.children.find(c => c.userData.isRing);
+        apply(ring.material, 'saturn_ring.png', { opacity: 0.95 });
       }
-      const belt = new THREE.Points(new THREE.BufferGeometry(),
-        new THREE.PointsMaterial({ color: 0x8a7d6a, size: 1.4, sizeAttenuation: false, transparent: true, opacity: 0.55 }));
+
+      // Asteroid belt: a faint band between 2.2 and 3.3 AU (a region, not individual objects)
+      const belt = new THREE.Mesh(new THREE.BufferGeometry(),
+        new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false }));
       sScene.add(belt);
 
-      // Distance rings on the ecliptic + the vernal-equinox direction (λ = 0°)
+      // Ecliptic grid: 12 faint spokes every 30° of longitude
       const grid = new THREE.Group(); sScene.add(grid);
-      const RINGS_AU = [1, 5, 10, 20, 30, 40];
-      for (const au of RINGS_AU) makeLabel('au' + au, au + ' AU', 'au');
-      makeLabel('gamma', '♈ λ 0°', 'au');
+
+      // Trails: a fading streak behind each planet over the last ~16% of its orbit
+      const TRAIL_N = 40, trails = {};
+      for (const b of BODIES) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((TRAIL_N + 1) * 3), 3));
+        const col = new Float32Array((TRAIL_N + 1) * 3);
+        for (let i = 0; i <= TRAIL_N; i++) { const k = 0.9 * Math.pow(1 - i / TRAIL_N, 1.6); col.set([0, k * 0.94, k], i * 3); }
+        g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+        trails[b.id] = new THREE.Line(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        trails[b.id].frustumCulled = false;
+        sScene.add(trails[b.id]);
+      }
+      const periodMs = (id) => Math.pow(ELEMENTS[id][0], 1.5) * 365.25 * 86400000;
+      function updateTrails() {
+        const v = new THREE.Vector3();
+        for (const b of BODIES) {
+          const arr = trails[b.id].geometry.attributes.position, span = periodMs(b.id) * 0.16;
+          for (let i = 0; i <= TRAIL_N; i++) {
+            const p = i ? helio(b.id, sol.t - span * i / TRAIL_N) : posAU[b.id];
+            toScene(p[0], p[1], p[2], v); arr.setXYZ(i, v.x, v.y, v.z);
+          }
+          arr.needsUpdate = true;
+        }
+      }
 
       function buildStatic() {
         // Orbits: sampled over eccentric anomaly at the current epoch, mapped point by point.
@@ -14783,25 +14848,20 @@ PELICAN-9
           orbitLines[b.id]?.geometry.dispose();
           if (!orbitLines[b.id]) {
             orbitLines[b.id] = new THREE.Line(new THREE.BufferGeometry(),
-              new THREE.LineBasicMaterial({ color: b.color, transparent: true, opacity: 0.32 }));
+              new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.11, depthWrite: false }));
             sScene.add(orbitLines[b.id]);
           }
           orbitLines[b.id].geometry = new THREE.BufferGeometry().setFromPoints(pts);
         }
-        const bp = new Float32Array(beltAU.length);
-        for (let i = 0; i < beltAU.length; i += 3) { toScene(beltAU[i], beltAU[i + 1], beltAU[i + 2], v); bp.set([v.x, v.y, v.z], i); }
+        const bIn = toScene(2.2, 0, 0, v).x, bOut = toScene(3.3, 0, 0, v).x;
         belt.geometry.dispose();
-        belt.geometry = new THREE.BufferGeometry(); belt.geometry.setAttribute('position', new THREE.BufferAttribute(bp, 3));
+        belt.geometry = new THREE.RingGeometry(bIn, bOut, 160, 1).rotateX(-Math.PI / 2);
         for (const c of [...grid.children]) { c.geometry.dispose(); grid.remove(c); }
-        const gm = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.09 });
-        for (const au of RINGS_AU) {
-          const pts = [];
-          for (let i = 0; i <= 180; i++) { const a = i / 180 * Math.PI * 2; pts.push(toScene(au * Math.cos(a), au * Math.sin(a), 0, v).clone()); }
-          grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gm));
+        const gm = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.05, depthWrite: false });
+        for (let k = 0; k < 12; k++) {
+          const a = k * Math.PI / 6;
+          grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), toScene(40 * Math.cos(a), 40 * Math.sin(a), 0, v).clone()]), gm));
         }
-        grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), toScene(40, 0, 0, v).clone()]),
-          new THREE.LineDashedMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.22, dashSize: 0.6, gapSize: 0.6 })));
-        grid.children.at(-1).computeLineDistances();
       }
 
       // ── State per frame
@@ -14828,10 +14888,12 @@ PELICAN-9
         const cp = sCam.position;
         const sd = cp.length();
         sun.scale.setScalar(Math.max(1.5, pxScale(sd) * 9));
-        sunGlow.scale.setScalar(sun.scale.x * 7);
+        sunGlow.scale.setScalar(sun.scale.x * 5);
+        sunReticle.scale.setScalar(sun.scale.x * 1.7);
+        sunReticle.quaternion.copy(sCam.quaternion);
         for (const b of BODIES) {
           const d = cp.distanceTo(pos[b.id]);
-          meshes[b.id].scale.setScalar(Math.max(b.size, pxScale(d) * (b.dwarf ? 2.5 : 3 + b.size * 3)));
+          meshes[b.id].scale.setScalar(Math.max(b.size, pxScale(d) * (b.dwarf ? 3 : 4 + b.size * 5)));
         }
         // Moon: real direction, distance exaggerated so it clears Earth's (inflated) disc
         const es = meshes.earth.scale.x, lam = moonInfo.lam * D2R, bet = moonInfo.bet * D2R;
@@ -14840,25 +14902,40 @@ PELICAN-9
         moon.scale.setScalar(es * 0.27);
       }
       const tmpV = new THREE.Vector3();
-      function placeLabel(el, v, show = true, dy = 0) {
-        tmpV.copy(v).project(sCam);
-        if (!show || tmpV.z > 1 || tmpV.z < -1) { el.style.display = 'none'; return; }
-        el.style.display = '';
-        el.style.transform = `translate(${((tmpV.x + 1) / 2 * innerWidth).toFixed(1)}px, ${((1 - tmpV.y) / 2 * innerHeight + dy).toFixed(1)}px)`;
-      }
+      const labelW = {};
       function updateLabels() {
-        const cd = sCam.position.length();
-        // Drop each label just below the body's disc, however big it is on screen.
         const rPx = (o) => Math.min(innerHeight / 3, o.scale.x / pxScale(Math.max(0.01, sCam.position.distanceTo(o.position))));
-        placeLabel(labels.sun, sun.position, true, rPx(sun) * 0.9);
+        const items = [];
+        const add = (id, o, show = true) => {
+          const el = labels[id];
+          tmpV.copy(o.position).project(sCam);
+          if (!show || tmpV.z > 1 || tmpV.z < -1) { el.style.display = 'none'; leaders[id].style.display = 'none'; return; }
+          el.style.display = ''; leaders[id].style.display = '';
+          // Leader starts on the disc's upper-right edge and runs 45° up to the label's underline.
+          const r = rPx(o) * 0.7, sx = (tmpV.x + 1) / 2 * innerWidth, sy = (1 - tmpV.y) / 2 * innerHeight;
+          const ex = sx + r, ey = sy - r;
+          labelW[id] ??= el.offsetWidth || 60;
+          items.push({ id, el, ex, ey, x: ex + 12, y: ey - 12, w: labelW[id] });
+        };
+        add('sun', sun);
         for (const b of BODIES) {
-          placeLabel(labels[b.id], pos[b.id], true, rPx(meshes[b.id]) * 0.9);
+          add(b.id, meshes[b.id]);
           labels[b.id].classList.toggle('on', sol.focus === b.id || sol.hoverId === b.id);
         }
-        placeLabel(labels.moon, moon.position, sCam.position.distanceTo(pos.earth) < 18);
-        const v = new THREE.Vector3();
-        for (const au of RINGS_AU) placeLabel(labels['au' + au], toScene(au * Math.cos(-0.5), au * Math.sin(-0.5), 0, v), cd > 25 || au === 1);
-        placeLabel(labels.gamma, toScene(40, 0, 0, v), cd > 60);
+        add('moon', moon, sCam.position.distanceTo(pos.earth) < 18);
+        // Greedy declutter: walk bottom-up and lift a label above any it would overlap.
+        items.sort((a, b) => b.y - a.y);
+        for (let i = 1; i < items.length; i++) for (let j = 0; j < i; j++) {
+          const a = items[j], b = items[i];
+          if (b.x < a.x + a.w + 6 && a.x < b.x + b.w + 6 && Math.abs(a.y - b.y) < 15) b.y = a.y - 15;
+        }
+        for (const it of items) {
+          it.el.style.transform = `translate(${it.x.toFixed(1)}px, ${it.y.toFixed(1)}px) translateY(-100%)`;
+          const ln = leaders[it.id];
+          ln.setAttribute('x1', it.ex.toFixed(1)); ln.setAttribute('y1', it.ey.toFixed(1));
+          ln.setAttribute('x2', it.x.toFixed(1)); ln.setAttribute('y2', it.y.toFixed(1));
+          ln.classList.toggle('on', it.el.classList.contains('on'));
+        }
       }
 
       // ── Panel (right rail)
@@ -14901,7 +14978,7 @@ PELICAN-9
           <button class="sol-row" data-sid="sun" style="--c:#ffd36a"><span class="dot"></span><span class="nm">SUN</span><span class="v" data-k="r">—</span><span class="v sub" data-k="de"></span></button>
           ${rows}
           <div class="sol-moon" id="solMoon"></div>
-          <div class="sol-note">Directions are real for the date shown. Planet sizes are not to scale; in COMPRESSED mode distances follow √AU. Moon distance is exaggerated.</div>`;
+          <div class="sol-note">Directions are real for the date shown. Planet sizes are not to scale; in COMPRESSED mode distances follow √AU. Moon distance is exaggerated. Planet maps: Solar System Scope (CC BY 4.0), NASA data.</div>`;
         updateSolarPanel(true);
       }
       function updateSolarPanel(full) {
@@ -14979,7 +15056,8 @@ PELICAN-9
       }
       const posOf = (id) => id === 'sun' ? sun.position : id === 'moon' ? moon.position : pos[id];
       const OVERVIEW_DIR = new THREE.Vector3(0.35, 0.78, 0.9);
-      const overviewDist = () => sol.scaleMode === 'sqrt' ? 135 : 820;
+      // Narrow (portrait) screens need to stand further back to fit the outer planets in.
+      const overviewDist = () => (sol.scaleMode === 'sqrt' ? 135 : 820) * Math.max(1, 0.85 / (innerWidth / innerHeight));
       function focusBody(id) {
         const p = posOf(id); if (!p) return;
         sol.focus = id === 'sun' ? null : id;
@@ -15048,6 +15126,11 @@ PELICAN-9
         const prevFocus = sol.focus && posOf(sol.focus).clone();
         updatePositions();
         updateSizes();
+        updateTrails();
+        for (const b of BODIES) {
+          meshes[b.id].rotation.y += dt * 0.15;   // slow spin, just for life
+          orbitLines[b.id].material.opacity = (sol.focus === b.id || sol.hoverId === b.id) ? 0.4 : 0.11;
+        }
         // Follow the focused body as time moves it
         if (prevFocus && !camTween) {
           const d = posOf(sol.focus).clone().sub(prevFocus);
@@ -15113,6 +15196,7 @@ PELICAN-9
           if (state.tab !== 'orbit') { sol.busy = false; fadeEl.classList.remove('on'); setSwitch('earth'); return; }
           // 2 · swap to the solar scene, starting right above Earth, then pull out to the whole system
           sol.t = sol.live ? Date.now() : sol.t;
+          loadTextures();
           buildStatic(); updatePositions(); syncCam();
           const ep = pos.earth;
           const dir = ep.clone().normalize().add(new THREE.Vector3(0, 0.45, 0)).normalize();
